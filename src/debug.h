@@ -11,6 +11,12 @@
                     __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
             exit(EXIT_FAILURE); \
         } \
-    } while (0);
+    } while (0)
+
+#define LOG_DEBUG(msg, ...) \
+    do { \
+        fprintf(stderr, "[DEBUG %s:%s:%d] " msg "\n", \
+                __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+    } while (0)
 
 #endif
