@@ -25,7 +25,7 @@ static char *read_file(char *source) {
         int size = ftell(fp);
         THROW(size < 0);
         THROW(fseek(fp, 0, SEEK_SET) < 0);
-        THROW(safe_alloc((uint8_t **) &buf, size+1));
+        THROW(SAFE_ALLOC(&buf, size+1));
         THROW(fread(buf, 1, size, fp) < 0);
         buf[size-1] = '\0';
         THROW(fclose(fp) < 0);
@@ -39,7 +39,7 @@ static char *read_file(char *source) {
             REPORT_C_ERR("An error occurred closing the file");
         }
         END_TRY;
-        safe_free((uint8_t **) &buf);
+        SAFE_FREE(&buf);
     }
     END_TRY;
     return NULL;

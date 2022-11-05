@@ -3,13 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-ERR safe_alloc(uint8_t **ptr, int size) {
+ERR safe_alloc(void **ptr, int size) {
     if (size <= 0) {
         *ptr = NULL;
         return SUCCESS;
     }
     if (*ptr == NULL) {
-        uint8_t *alloc = malloc(size);
+        void *alloc = malloc(size);
         if (!alloc)
             return ALLOC_ERR;
         memset(alloc, 0, size);
@@ -19,7 +19,7 @@ ERR safe_alloc(uint8_t **ptr, int size) {
     return ALLOC_ERR;
 }
 
-void safe_free(uint8_t **ptr) {
+void safe_free(void **ptr) {
     if (*ptr != NULL) {
         free(*ptr);
         *ptr = NULL;
