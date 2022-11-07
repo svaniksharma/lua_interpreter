@@ -24,6 +24,6 @@ typedef enum err {
 #define TRY do { jmp_buf _ex; if (!setjmp(_ex)) {
 #define CATCH } else {
 #define END_TRY } } while (0)
-#define THROW(cond) do { if (!(cond)) { longjmp(_ex, FAIL); } } while(0)
+#define THROW(cond) do { if ((cond)) { longjmp(_ex, FAIL); } } while(0)
 
 #endif

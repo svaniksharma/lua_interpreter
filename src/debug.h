@@ -19,4 +19,7 @@
                 __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 
+#define SENTINEL() fprintf(stderr, "[SENTINEL] at %s:%s:%d\n", __FILE__, __FUNCTION__, __LINE__)
+
+
 #endif
