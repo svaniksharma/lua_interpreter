@@ -54,9 +54,42 @@ static LUA_BOOL is_digit(char c) {
     return c >= '0' && c <= '9';
 }
 
+static void match_to_end(SRCBUF *buf, const char *str, TOKEN_TYPE *t) {
+}
+
 // TODO: match a number literal, identifier, reserved words
 static TOKEN consume_remaining(SRCBUF *buf) {
-    return init_token(TOKEN_ERR, NULL, 0);
+    if (is_letter(buf->src[buf->index]) || buf->src[buf->index] == '_') {
+        while (buf->index < buf->length) {
+            TOKEN_TYPE t = TOKEN_ID;
+            switch (buf->src[buf->index]) {
+                case 'a': MATCH_TO_END(buf, "nd", TOKEN_AND);
+                case 'e': MATCH_TO_END(buf, "nd", TOKEN_END);
+                case 'w': MATCH_TO_END(buf, "hile", TOKEN_WHILE);
+                case 'b': MATCH_TO_END(buf, "reak", TOKEN_BREAK);
+                case 'l': MATCH_TO_END(buf, "ocal", TOKEN_LOCAL);
+                case 'd': MATCH_TO_END(buf, "o", TOKEN_DO);
+                case 'o': MATCH_TO_END(buf, "r", TOKEN_OR);
+                case 'u': MATCH_TO_END(buf, "ntil", TOKEN_UNTIL);
+                case 'i': {
+                    if (buf->src[buf->index + 1] == 'f')
+                        t = TOKEN_IF;
+                    else if (buf->src[buf->index + 1] == 'n')
+                        t = TOKEN_IN;
+                    buf->index += 2;
+                }
+                case 'r': {
+                    
+                }
+                case 'f': {
+                }
+                case 't': {
+                }
+                case 'n': {
+                }
+            }
+        }
+    }
 }
 
 TOKEN scan_next_token(SRCBUF *buf) {

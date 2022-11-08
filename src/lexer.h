@@ -15,6 +15,13 @@
     return t; \
 }
 
+#define MATCH_TO_END(buf, str, token_type) \
+{ \
+    ++buf->index; \
+    match_to_end(buf, str, &t); \
+    break; \
+}
+
 typedef enum lua_token_type {
     TOKEN_ADD,
     TOKEN_MINUS,
@@ -37,9 +44,15 @@ typedef enum lua_token_type {
     TOKEN_LT,
     TOKEN_GE,
     TOKEN_GT,
+    TOKEN_AND,
+    TOKEN_END,
+    TOKEN_IF,
+    TOKEN_IN,
     TOKEN_ASSIGN,
     TOKEN_STR,
     TOKEN_NUM,
+    TOKEN_DUMMY,
+    TOKEN_ID,
     TOKEN_ERR,
     TOKEN_EOF
 } TOKEN_TYPE;
