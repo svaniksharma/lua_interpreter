@@ -87,11 +87,10 @@ static TOKEN consume_remaining(SRCBUF *buf) {
                 if (buf->src[buf->index + 1] == 'f')
                     t = TOKEN_IF;
                 else if (buf->src[buf->index + 1] == 'n')
-                        t = TOKEN_IN;
-                    buf->index += 2;
-                }
+                    t = TOKEN_IN;
+                buf->index += 2;
+            }
             case 'r': {
-                
             }
             case 'f': {
             }
