@@ -11,10 +11,12 @@ void run(char *source, int length) {
     TOKEN t = { 0 };
     while (t.type != TOKEN_EOF) {
         t = scan_next_token(&buf);
-        LOG_DEBUG("%d", t.type);
         if (t.type == TOKEN_ERR) {
             LOG_DEBUG("FOUND ERROR TOKEN");
             return;
         }
+        char name[100] = { 0 };
+        snprintf(name, t.lexeme_len, "%s", t.lexeme);
+        LOG_DEBUG("Token Type: %d; Token String: %s", t.type, name);
     }
 }

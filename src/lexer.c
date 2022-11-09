@@ -20,7 +20,7 @@ static TOKEN consume_str_literal(SRCBUF *buf) {
             break;
     }
     TOKEN_TYPE type = (i == buf->length) ? TOKEN_ERR : TOKEN_STR;
-    TOKEN tok = init_token(type, buf->src + buf->index, i - 1 - buf->index);
+    TOKEN tok = init_token(type, buf->src + buf->index, i - buf->index + 1);
     buf->index =  (i < buf->length) ? i + 1 : buf->length;
     return tok;
 }
@@ -80,14 +80,10 @@ static void consume_id(SRCBUF *buf) {
 }
 
 static TOKEN_TYPE match_e(SRCBUF *buf) {
-    switch (buf->src[buf->index]) {
-        case 'n':
-            ++buf->index;
-            if (match_to_end(buf, "d", 1))
-                return TOKEN_END;
-            break;
+    switch (CURR(buf)) {
+        case 'n': MATCH_RET_TYPE(buf, "d", 1, TOKEN_END);
         case 'l':
-            ++buf->index;
+            ADVANCE(buf);
             if (match_to_end(buf, "se", 2))
                 return TOKEN_ELSE;
             else if (match_to_end(buf, "if", 2))
@@ -146,8 +142,9 @@ static TOKEN_TYPE match_n(SRCBUF *buf) {
 
 // TODO: match a number literal, identifier, reserved words
 static TOKEN consume_remaining(SRCBUF *buf) {
-    if (is_letter(buf->src[buf->index]) || buf->src[buf->index] == '_') {
-        switch (buf->src[buf->index]) {
+    if (is_letter(CURR(buf)) || CURR(buf) == '_') {
+        int start = buf->index;
+        switch (CURR(buf)) {
             case 'a': MATCH_TO_END(buf, "nd", 2, TOKEN_AND);
             case 'w': MATCH_TO_END(buf, "hile", 4, TOKEN_WHILE);
             case 'b': MATCH_TO_END(buf, "reak", 4, TOKEN_BREAK);
@@ -163,29 +160,27 @@ static TOKEN consume_remaining(SRCBUF *buf) {
             case 'n': MATCH_BRANCH(buf, match_n);
         }
         consume_id(buf);
-        return init_token(TOKEN_ID, NULL, 0);
+        return init_token(TOKEN_ID, buf->src + start, buf->index - start + 1);
     }
     return init_token(TOKEN_ERR, NULL, 0);
 }
 
 TOKEN scan_next_token(SRCBUF *buf) {
-    while (buf->index < buf->length) {
-        char c = buf->src[buf->index];
+    while (CAN_ADVANCE(buf)) {
+        char c = CURR(buf);
         if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
-            ++buf->index;
-        else if (c == '-' && buf->src[buf->index + 1] == '-') {
-            buf->index += 2;
+            ADVANCE(buf);
+        else if (c == '-' && LOOKAHEAD(buf) == '-') {
+            DOUBLE_ADVANCE(buf);
             if (!check_comment(buf))
                 return init_token(TOKEN_ERR, NULL, 0);
         } else if (c == '-') {
-            ++buf->index;
+            ADVANCE(buf);
             return init_token(TOKEN_MINUS, NULL, 0);
         } else
             break;
     }
-    if (buf->index == buf->length)
-        return init_token(TOKEN_EOF, NULL, 0);
-    switch (buf->src[buf->index]) {
+    switch (CURR(buf)) {
         case '\0': SINGULAR_TOKEN(buf, TOKEN_EOF);
         case '+': SINGULAR_TOKEN(buf, TOKEN_ADD);
         case '*': SINGULAR_TOKEN(buf, TOKEN_MULT);

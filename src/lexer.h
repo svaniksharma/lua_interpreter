@@ -2,6 +2,7 @@
 #define LEX_H
 
 #define CURR(buf) buf->src[buf->index]
+
 #define ADVANCE(buf) \
 do {  \
     buf->index = buf->index + ((buf->index < buf->length) ? 1 : 0); \
@@ -16,14 +17,14 @@ do {  \
 
 #define SINGULAR_TOKEN(buf, token_type) \
 { \
-    buf->index++; \
-    return init_token(token_type, NULL, 0); \
+    ADVANCE(buf); \
+    return init_token(token_type, buf->src + buf->index-1 , 1); \
 }
 
 #define LOOKAHEAD_BRANCH(buf, c, token_success, token_failure) \
 { \
-    TOKEN t = LOOKAHEAD(buf) == c ? init_token(token_success, NULL, 0) \
-                                  : init_token(token_failure, NULL, 0); \
+    TOKEN t = LOOKAHEAD(buf) == c ? init_token(token_success, buf->src + buf->index, 2) \
+                                  : init_token(token_failure, buf->src + buf->index, 2); \
     if (t.type == token_success) { \
         DOUBLE_ADVANCE(buf); \
     } \
@@ -43,7 +44,7 @@ do {  \
 
 #define MATCH_BRANCH(buf, match_func) \
 { \
-    ++buf->index; \
+    ADVANCE(buf); \
     TOKEN_TYPE t = match_func(buf); \
     if (t != TOKEN_ID) \
         return init_token(t, NULL, 0); \
