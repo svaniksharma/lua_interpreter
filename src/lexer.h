@@ -11,14 +11,16 @@
 { \
     TOKEN t = buf->src[buf->index + 1] == c ? init_token(token_success, NULL, 0) \
                                             : init_token(token_failure, NULL, 0); \
-    buf->index += 2; \
+    buf->index = buf->index + ((t.type == token_success) ? 2 : 1); \
     return t; \
 }
 
 #define MATCH_TO_END(buf, str, token_type) \
 { \
     ++buf->index; \
-    match_to_end(buf, str, &t); \
+    if (match_to_end(buf, str)) { \
+        t = token_type; \
+    } \
     break; \
 }
 
@@ -51,6 +53,12 @@ typedef enum lua_token_type {
     TOKEN_ASSIGN,
     TOKEN_STR,
     TOKEN_NUM,
+    TOKEN_WHILE,
+    TOKEN_BREAK,
+    TOKEN_LOCAL,
+    TOKEN_DO,
+    TOKEN_OR,
+    TOKEN_UNTIL,
     TOKEN_DUMMY,
     TOKEN_ID,
     TOKEN_ERR,

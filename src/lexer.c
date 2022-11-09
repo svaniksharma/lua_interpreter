@@ -47,48 +47,60 @@ static LUA_BOOL check_comment(SRCBUF *buf) {
 }
 
 static LUA_BOOL is_letter(char c) {
-    return (c >= 'A' && c <= 'Z') || (c >= 'a' || c <= 'z');
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
 static LUA_BOOL is_digit(char c) {
     return c >= '0' && c <= '9';
 }
 
-static void match_to_end(SRCBUF *buf, const char *str, TOKEN_TYPE *t) {
+static LUA_BOOL is_valid_id_char(char c) {
+    return is_letter(c) || is_digit(c) || c == '_';
+}
+
+static LUA_BOOL match_to_end(SRCBUF *buf, const char *str) {
+    int i = 0;
+    LUA_BOOL matched = TRUE;
+    for (i = buf->index; i < buf->length && is_valid_id_char(buf->src[i]); i++) {
+        if (buf->src[i] != str[i - buf->index]) {
+            matched = FALSE;
+        }
+    }
+    buf->index = i;
+    return matched;
 }
 
 // TODO: match a number literal, identifier, reserved words
 static TOKEN consume_remaining(SRCBUF *buf) {
     if (is_letter(buf->src[buf->index]) || buf->src[buf->index] == '_') {
-        while (buf->index < buf->length) {
-            TOKEN_TYPE t = TOKEN_ID;
-            switch (buf->src[buf->index]) {
-                case 'a': MATCH_TO_END(buf, "nd", TOKEN_AND);
-                case 'e': MATCH_TO_END(buf, "nd", TOKEN_END);
-                case 'w': MATCH_TO_END(buf, "hile", TOKEN_WHILE);
-                case 'b': MATCH_TO_END(buf, "reak", TOKEN_BREAK);
-                case 'l': MATCH_TO_END(buf, "ocal", TOKEN_LOCAL);
-                case 'd': MATCH_TO_END(buf, "o", TOKEN_DO);
-                case 'o': MATCH_TO_END(buf, "r", TOKEN_OR);
-                case 'u': MATCH_TO_END(buf, "ntil", TOKEN_UNTIL);
-                case 'i': {
-                    if (buf->src[buf->index + 1] == 'f')
-                        t = TOKEN_IF;
-                    else if (buf->src[buf->index + 1] == 'n')
+        TOKEN_TYPE t = TOKEN_ID;
+        switch (buf->src[buf->index]) {
+            case 'a': MATCH_TO_END(buf, "nd", TOKEN_AND);
+            case 'e': MATCH_TO_END(buf, "nd", TOKEN_END);
+            case 'w': MATCH_TO_END(buf, "hile", TOKEN_WHILE);
+            case 'b': MATCH_TO_END(buf, "reak", TOKEN_BREAK);
+            case 'l': MATCH_TO_END(buf, "ocal", TOKEN_LOCAL);
+            case 'd': MATCH_TO_END(buf, "o", TOKEN_DO);
+            case 'o': MATCH_TO_END(buf, "r", TOKEN_OR);
+            case 'u': MATCH_TO_END(buf, "ntil", TOKEN_UNTIL);
+            case 'i': {
+                if (buf->src[buf->index + 1] == 'f')
+                    t = TOKEN_IF;
+                else if (buf->src[buf->index + 1] == 'n')
                         t = TOKEN_IN;
                     buf->index += 2;
                 }
-                case 'r': {
-                    
-                }
-                case 'f': {
-                }
-                case 't': {
-                }
-                case 'n': {
-                }
+            case 'r': {
+                
+            }
+            case 'f': {
+            }
+            case 't': {
+            }
+            case 'n': {
             }
         }
+        return init_token(t, NULL, 0);
     }
 }
 
