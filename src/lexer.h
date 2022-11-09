@@ -1,23 +1,40 @@
 #ifndef LEX_H
 #define LEX_H
 
+#define CURR(buf) buf->src[buf->index]
+#define ADVANCE(buf) \
+do {  \
+    buf->index = buf->index + ((buf->index < buf->length) ? 1 : 0); \
+} while (0)
+
+#define DOUBLE_ADVANCE(buf) \
+    ADVANCE(buf);  \
+    ADVANCE(buf);
+
+#define LOOKAHEAD(buf) ((buf->index < buf->length) ? buf->src[buf->index + 1] : '\0')
+#define CAN_ADVANCE(buf) buf->index < buf->length
+
 #define SINGULAR_TOKEN(buf, token_type) \
 { \
     buf->index++; \
     return init_token(token_type, NULL, 0); \
 }
 
-#define LOOKAHEAD(buf, c, token_success, token_failure) \
+#define LOOKAHEAD_BRANCH(buf, c, token_success, token_failure) \
 { \
-    TOKEN t = buf->src[buf->index + 1] == c ? init_token(token_success, NULL, 0) \
-                                            : init_token(token_failure, NULL, 0); \
-    buf->index = buf->index + ((t.type == token_success) ? 2 : 1); \
+    TOKEN t = LOOKAHEAD(buf) == c ? init_token(token_success, NULL, 0) \
+                                  : init_token(token_failure, NULL, 0); \
+    if (t.type == token_success) { \
+        DOUBLE_ADVANCE(buf); \
+    } \
+    else \
+        ADVANCE(buf); \
     return t; \
 }
 
 #define MATCH_TO_END(buf, str, len, token_type) \
 { \
-    ++buf->index; \
+    ADVANCE(buf); \
     if (match_to_end(buf, str, len)) { \
         return init_token(token_type, NULL, 0); \
     } \
@@ -30,6 +47,14 @@
     TOKEN_TYPE t = match_func(buf); \
     if (t != TOKEN_ID) \
         return init_token(t, NULL, 0); \
+    break; \
+}
+
+#define MATCH_RET_TYPE(buf, str, len, token_type) \
+{ \
+    ADVANCE(buf); \
+    if (match_to_end(buf, str, len)) \
+        return token_type; \
     break; \
 }
 

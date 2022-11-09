@@ -11,7 +11,9 @@ static TOKEN init_token(TOKEN_TYPE type, char *lexeme, int lexeme_len) {
     return tok;
 }
 
-static TOKEN consume_str_literal(SRCBUF *buf, char quote) {
+static TOKEN consume_str_literal(SRCBUF *buf) {
+    char quote = CURR(buf);
+    ADVANCE(buf);
     int i = 0;
     for (i = buf->index; i < buf->length; i++) {
         if (buf->src[i] == quote)
@@ -24,12 +26,13 @@ static TOKEN consume_str_literal(SRCBUF *buf, char quote) {
 }
 
 static LUA_BOOL check_comment(SRCBUF *buf) {
-    if (buf->src[buf->index] == '[' && buf->src[buf->index + 1] == '[') {
-        buf->index += 2;
+    if (CURR(buf) == '[' && LOOKAHEAD(buf) == '[') {
+        DOUBLE_ADVANCE(buf);
         int tokens_counted = 0;
         const int tokens_needed[] = { '-', '-', ']', ']' };
-        for (; buf->index < buf->length; buf->index++) {
-            char c = buf->src[buf->index];
+        while (CAN_ADVANCE(buf)) {
+            char c = CURR(buf);
+            ADVANCE(buf);
             if (c == tokens_needed[tokens_counted])
                 ++tokens_counted;
             else
@@ -39,9 +42,11 @@ static LUA_BOOL check_comment(SRCBUF *buf) {
         }
         return (tokens_counted < sizeof(tokens_needed) / sizeof(int)) ? FALSE : TRUE;
     } else {
-        for (; buf->index < buf->length; buf->index++)
-            if (buf->src[buf->index] == '\n')
+        while (CAN_ADVANCE(buf)) {
+            if (CURR(buf) == '\n')
                 break;
+            ADVANCE(buf);
+        }
     }
     return TRUE;
 }
@@ -60,18 +65,18 @@ static LUA_BOOL is_valid_id_char(char c) {
 
 static LUA_BOOL match_to_end(SRCBUF *buf, const char *str, int len) {
    int k = 0;
-   while (k < len && buf->index < buf->length && is_valid_id_char(buf->src[buf->index])) {
-       if (buf->src[buf->index] != str[k])
+   while (k < len && CAN_ADVANCE(buf) && is_valid_id_char(CURR(buf))) {
+       if (CURR(buf) != str[k])
            return FALSE;
-       ++buf->index;
+       ADVANCE(buf);
        ++k;
    }
-   return k == len && !is_valid_id_char(buf->src[buf->index]);
+   return k == len && !is_valid_id_char(CURR(buf));
 }
 
 static void consume_id(SRCBUF *buf) {
-    while (buf->index < buf->length && is_valid_id_char(buf->src[buf->index]))
-        ++buf->index;
+    while (CAN_ADVANCE(buf) && is_valid_id_char(CURR(buf)))
+        ADVANCE(buf);
 }
 
 static TOKEN_TYPE match_e(SRCBUF *buf) {
@@ -93,93 +98,48 @@ static TOKEN_TYPE match_e(SRCBUF *buf) {
 }
 
 static TOKEN_TYPE match_i(SRCBUF *buf) {
-   if (buf->src[buf->index] == 'f' && !is_valid_id_char(buf->src[buf->index + 1])) {
-       buf->index += 2;
+   if (CURR(buf) == 'f' && !is_valid_id_char(LOOKAHEAD(buf))) {
+       DOUBLE_ADVANCE(buf);
        return TOKEN_IF;
-   } else if (buf->src[buf->index] == 'n' && !is_valid_id_char(buf->src[buf->index + 1])) {
-       buf->index += 2;
+   } else if (CURR(buf) == 'n' && !is_valid_id_char(LOOKAHEAD(buf))) {
+       DOUBLE_ADVANCE(buf);
        return TOKEN_IN;
    }
    return TOKEN_ID;
 }
 
 static TOKEN_TYPE match_r(SRCBUF *buf) {
-    if (buf->src[buf->index] == 'e') {
-        ++buf->index;
-        switch (buf->src[buf->index]) {
-            case 'p': {
-                ++buf->index; 
-                if (match_to_end(buf, "eat", 3))
-                    return TOKEN_REPEAT;
-                break;
-            }
-            case 't': {
-                ++buf->index;
-                if (match_to_end(buf, "urn", 3))
-                    return TOKEN_RETURN;
-                break;
-            }
+    if (CURR(buf) == 'e') {
+        ADVANCE(buf);
+        switch (CURR(buf)) {
+            case 'p': MATCH_RET_TYPE(buf, "eat", 3, TOKEN_REPEAT);
+            case 't': MATCH_RET_TYPE(buf, "urn", 3, TOKEN_RETURN);
         }
     }
     return TOKEN_ID;
 }
 
 static TOKEN_TYPE match_f(SRCBUF *buf) {
-    switch (buf->src[buf->index]) {
-        case 'o': {
-            ++buf->index;
-            if (match_to_end(buf, "r", 1))
-                return TOKEN_FOR;
-            break;
-        }
-        case 'a': {
-            ++buf->index;
-            if (match_to_end(buf, "lse", 3))
-                return TOKEN_FALSE;
-            break;
-        }
-        case 'u': {
-            ++buf->index;
-            if (match_to_end(buf, "nction", 6))
-                return TOKEN_FUNCTION;
-            break;
-        } 
+    switch (CURR(buf)) {
+        case 'o': MATCH_RET_TYPE(buf, "r", 1, TOKEN_FOR);
+        case 'a': MATCH_RET_TYPE(buf, "lse", 3, TOKEN_FALSE);
+        case 'u': MATCH_RET_TYPE(buf, "nction", 6, TOKEN_FUNCTION);
     }
     return TOKEN_ID;
 }
 
 static TOKEN_TYPE match_t(SRCBUF *buf) {
-    switch (buf->src[buf->index]) {
-        case 'r': {
-            ++buf->index;
-            if (match_to_end(buf, "ue", 2))
-                return TOKEN_TRUE;
-            break;
-        }
-        case 'h': {
-            ++buf->index;
-            if (match_to_end(buf, "en", 2))
-                return TOKEN_THEN;
-            break;
-        } 
+    switch (CURR(buf)) {
+        case 'r': MATCH_RET_TYPE(buf, "ue", 2, TOKEN_TRUE);
+        case 'h': MATCH_RET_TYPE(buf, "en", 2, TOKEN_THEN);
     }
     return TOKEN_ID;
 }
 
 static TOKEN_TYPE match_n(SRCBUF *buf) {
-    switch (buf->src[buf->index]) {
-        case 'i': {
-            ++buf->index;
-            if (match_to_end(buf, "l", 1))
-                return TOKEN_NIL;
-            break;
-        }
-        case 'o': {
-            ++buf->index;
-            if (match_to_end(buf, "o", 1))
-                return TOKEN_NOT;
-            break;
-        } 
+    switch (CURR(buf)) {
+        case 'i': MATCH_RET_TYPE(buf, "l", 1, TOKEN_NIL);
+        case 'o': MATCH_RET_TYPE(buf, "o", 1, TOKEN_NOT);
     }
     return TOKEN_ID;
 }
@@ -241,13 +201,12 @@ TOKEN scan_next_token(SRCBUF *buf) {
         case ';': SINGULAR_TOKEN(buf, TOKEN_SEMICOLON);
         case '"':
         case '\'':
-            ++buf->index;
-            return consume_str_literal(buf, buf->src[buf->index - 1]);
-        case '<': LOOKAHEAD(buf, '=', TOKEN_LE, TOKEN_LT);
-        case '>': LOOKAHEAD(buf, '=', TOKEN_GE, TOKEN_GT);
-        case '=': LOOKAHEAD(buf, '=', TOKEN_EQ, TOKEN_ASSIGN);
-        case '~': LOOKAHEAD(buf, '=', TOKEN_NE, TOKEN_ERR);
-        case '.': LOOKAHEAD(buf, '.', TOKEN_CAT, TOKEN_DOT);
+            return consume_str_literal(buf);
+        case '<': LOOKAHEAD_BRANCH(buf, '=', TOKEN_LE, TOKEN_LT);
+        case '>': LOOKAHEAD_BRANCH(buf, '=', TOKEN_GE, TOKEN_GT);
+        case '=': LOOKAHEAD_BRANCH(buf, '=', TOKEN_EQ, TOKEN_ASSIGN);
+        case '~': LOOKAHEAD_BRANCH(buf, '=', TOKEN_NE, TOKEN_ERR);
+        case '.': LOOKAHEAD_BRANCH(buf, '.', TOKEN_CAT, TOKEN_DOT);
         default:
             break;
     }
