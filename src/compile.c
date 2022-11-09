@@ -8,8 +8,9 @@ void run(char *source, int length) {
     buf.src = source;
     buf.length = length;
     buf.index = 0;
-    while (buf.index < buf.length) {
-        TOKEN t = scan_next_token(&buf);
+    TOKEN t = { 0 };
+    while (t.type != TOKEN_EOF) {
+        t = scan_next_token(&buf);
         LOG_DEBUG("%d", t.type);
         if (t.type == TOKEN_ERR) {
             LOG_DEBUG("FOUND ERROR TOKEN");

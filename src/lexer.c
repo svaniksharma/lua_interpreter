@@ -58,49 +58,154 @@ static LUA_BOOL is_valid_id_char(char c) {
     return is_letter(c) || is_digit(c) || c == '_';
 }
 
-static LUA_BOOL match_to_end(SRCBUF *buf, const char *str) {
-    int i = 0;
-    LUA_BOOL matched = TRUE;
-    for (i = buf->index; i < buf->length && is_valid_id_char(buf->src[i]); i++) {
-        if (buf->src[i] != str[i - buf->index]) {
-            matched = FALSE;
+static LUA_BOOL match_to_end(SRCBUF *buf, const char *str, int len) {
+   int k = 0;
+   while (k < len && buf->index < buf->length && is_valid_id_char(buf->src[buf->index])) {
+       if (buf->src[buf->index] != str[k])
+           return FALSE;
+       ++buf->index;
+       ++k;
+   }
+   return k == len && !is_valid_id_char(buf->src[buf->index]);
+}
+
+static void consume_id(SRCBUF *buf) {
+    while (buf->index < buf->length && is_valid_id_char(buf->src[buf->index]))
+        ++buf->index;
+}
+
+static TOKEN_TYPE match_e(SRCBUF *buf) {
+    switch (buf->src[buf->index]) {
+        case 'n':
+            ++buf->index;
+            if (match_to_end(buf, "d", 1))
+                return TOKEN_END;
+            break;
+        case 'l':
+            ++buf->index;
+            if (match_to_end(buf, "se", 2))
+                return TOKEN_ELSE;
+            else if (match_to_end(buf, "if", 2))
+                return TOKEN_ELSEIF;
+            break;
+    }
+    return TOKEN_ID;
+}
+
+static TOKEN_TYPE match_i(SRCBUF *buf) {
+   if (buf->src[buf->index] == 'f' && !is_valid_id_char(buf->src[buf->index + 1])) {
+       buf->index += 2;
+       return TOKEN_IF;
+   } else if (buf->src[buf->index] == 'n' && !is_valid_id_char(buf->src[buf->index + 1])) {
+       buf->index += 2;
+       return TOKEN_IN;
+   }
+   return TOKEN_ID;
+}
+
+static TOKEN_TYPE match_r(SRCBUF *buf) {
+    if (buf->src[buf->index] == 'e') {
+        ++buf->index;
+        switch (buf->src[buf->index]) {
+            case 'p': {
+                ++buf->index; 
+                if (match_to_end(buf, "eat", 3))
+                    return TOKEN_REPEAT;
+                break;
+            }
+            case 't': {
+                ++buf->index;
+                if (match_to_end(buf, "urn", 3))
+                    return TOKEN_RETURN;
+                break;
+            }
         }
     }
-    buf->index = i;
-    return matched;
+    return TOKEN_ID;
+}
+
+static TOKEN_TYPE match_f(SRCBUF *buf) {
+    switch (buf->src[buf->index]) {
+        case 'o': {
+            ++buf->index;
+            if (match_to_end(buf, "r", 1))
+                return TOKEN_FOR;
+            break;
+        }
+        case 'a': {
+            ++buf->index;
+            if (match_to_end(buf, "lse", 3))
+                return TOKEN_FALSE;
+            break;
+        }
+        case 'u': {
+            ++buf->index;
+            if (match_to_end(buf, "nction", 6))
+                return TOKEN_FUNCTION;
+            break;
+        } 
+    }
+    return TOKEN_ID;
+}
+
+static TOKEN_TYPE match_t(SRCBUF *buf) {
+    switch (buf->src[buf->index]) {
+        case 'r': {
+            ++buf->index;
+            if (match_to_end(buf, "ue", 2))
+                return TOKEN_TRUE;
+            break;
+        }
+        case 'h': {
+            ++buf->index;
+            if (match_to_end(buf, "en", 2))
+                return TOKEN_THEN;
+            break;
+        } 
+    }
+    return TOKEN_ID;
+}
+
+static TOKEN_TYPE match_n(SRCBUF *buf) {
+    switch (buf->src[buf->index]) {
+        case 'i': {
+            ++buf->index;
+            if (match_to_end(buf, "l", 1))
+                return TOKEN_NIL;
+            break;
+        }
+        case 'o': {
+            ++buf->index;
+            if (match_to_end(buf, "o", 1))
+                return TOKEN_NOT;
+            break;
+        } 
+    }
+    return TOKEN_ID;
 }
 
 // TODO: match a number literal, identifier, reserved words
 static TOKEN consume_remaining(SRCBUF *buf) {
     if (is_letter(buf->src[buf->index]) || buf->src[buf->index] == '_') {
-        TOKEN_TYPE t = TOKEN_ID;
         switch (buf->src[buf->index]) {
-            case 'a': MATCH_TO_END(buf, "nd", TOKEN_AND);
-            case 'e': MATCH_TO_END(buf, "nd", TOKEN_END);
-            case 'w': MATCH_TO_END(buf, "hile", TOKEN_WHILE);
-            case 'b': MATCH_TO_END(buf, "reak", TOKEN_BREAK);
-            case 'l': MATCH_TO_END(buf, "ocal", TOKEN_LOCAL);
-            case 'd': MATCH_TO_END(buf, "o", TOKEN_DO);
-            case 'o': MATCH_TO_END(buf, "r", TOKEN_OR);
-            case 'u': MATCH_TO_END(buf, "ntil", TOKEN_UNTIL);
-            case 'i': {
-                if (buf->src[buf->index + 1] == 'f')
-                    t = TOKEN_IF;
-                else if (buf->src[buf->index + 1] == 'n')
-                    t = TOKEN_IN;
-                buf->index += 2;
-            }
-            case 'r': {
-            }
-            case 'f': {
-            }
-            case 't': {
-            }
-            case 'n': {
-            }
+            case 'a': MATCH_TO_END(buf, "nd", 2, TOKEN_AND);
+            case 'w': MATCH_TO_END(buf, "hile", 4, TOKEN_WHILE);
+            case 'b': MATCH_TO_END(buf, "reak", 4, TOKEN_BREAK);
+            case 'l': MATCH_TO_END(buf, "ocal", 4, TOKEN_LOCAL);
+            case 'd': MATCH_TO_END(buf, "o", 1, TOKEN_DO);
+            case 'o': MATCH_TO_END(buf, "r", 1, TOKEN_OR);
+            case 'u': MATCH_TO_END(buf, "ntil", 4, TOKEN_UNTIL);
+            case 'e': MATCH_BRANCH(buf, match_e);
+            case 'i': MATCH_BRANCH(buf, match_i);
+            case 'r': MATCH_BRANCH(buf, match_r);
+            case 'f': MATCH_BRANCH(buf, match_f);
+            case 't': MATCH_BRANCH(buf, match_t);
+            case 'n': MATCH_BRANCH(buf, match_n);
         }
-        return init_token(t, NULL, 0);
+        consume_id(buf);
+        return init_token(TOKEN_ID, NULL, 0);
     }
+    return init_token(TOKEN_ERR, NULL, 0);
 }
 
 TOKEN scan_next_token(SRCBUF *buf) {

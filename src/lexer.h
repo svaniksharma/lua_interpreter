@@ -15,12 +15,21 @@
     return t; \
 }
 
-#define MATCH_TO_END(buf, str, token_type) \
+#define MATCH_TO_END(buf, str, len, token_type) \
 { \
     ++buf->index; \
-    if (match_to_end(buf, str)) { \
-        t = token_type; \
+    if (match_to_end(buf, str, len)) { \
+        return init_token(token_type, NULL, 0); \
     } \
+    break; \
+}
+
+#define MATCH_BRANCH(buf, match_func) \
+{ \
+    ++buf->index; \
+    TOKEN_TYPE t = match_func(buf); \
+    if (t != TOKEN_ID) \
+        return init_token(t, NULL, 0); \
     break; \
 }
 
@@ -49,17 +58,27 @@ typedef enum lua_token_type {
     TOKEN_AND,
     TOKEN_END,
     TOKEN_IF,
+    TOKEN_ELSEIF,
+    TOKEN_ELSE,
     TOKEN_IN,
     TOKEN_ASSIGN,
     TOKEN_STR,
     TOKEN_NUM,
     TOKEN_WHILE,
+    TOKEN_FOR,
+    TOKEN_TRUE,
+    TOKEN_FALSE,
+    TOKEN_FUNCTION,
     TOKEN_BREAK,
     TOKEN_LOCAL,
     TOKEN_DO,
     TOKEN_OR,
+    TOKEN_THEN,
+    TOKEN_NIL,
+    TOKEN_NOT,
     TOKEN_UNTIL,
-    TOKEN_DUMMY,
+    TOKEN_REPEAT,
+    TOKEN_RETURN,
     TOKEN_ID,
     TOKEN_ERR,
     TOKEN_EOF
