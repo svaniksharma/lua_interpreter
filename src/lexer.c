@@ -123,10 +123,10 @@ static TOKEN_TYPE match_e(SRCBUF *buf) {
 
 static TOKEN_TYPE match_i(SRCBUF *buf) {
    if (CURR(buf) == 'f' && !is_valid_id_char(LOOKAHEAD(buf))) {
-       DOUBLE_ADVANCE(buf);
+       ADVANCE(buf);
        return TOKEN_IF;
    } else if (CURR(buf) == 'n' && !is_valid_id_char(LOOKAHEAD(buf))) {
-       DOUBLE_ADVANCE(buf);
+       ADVANCE(buf);
        return TOKEN_IN;
    }
    return TOKEN_ID;

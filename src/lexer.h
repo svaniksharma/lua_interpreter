@@ -25,7 +25,7 @@ do {  \
 #define LOOKAHEAD_BRANCH(buf, c, token_success, token_failure) \
 { \
     TOKEN t = LOOKAHEAD(buf) == c ? init_token(token_success, buf->src + buf->index, 2) \
-                                  : init_token(token_failure, buf->src + buf->index, 2); \
+                                  : init_token(token_failure, buf->src + buf->index, 1); \
     if (t.type == token_success) { \
         DOUBLE_ADVANCE(buf); \
     } \
@@ -36,19 +36,21 @@ do {  \
 
 #define MATCH_TO_END(buf, str, len, token_type) \
 { \
+    int start = buf->index; \
     ADVANCE(buf); \
     if (match_to_end(buf, str, len)) { \
-        return init_token(token_type, NULL, 0); \
+        return init_token(token_type, buf->src + start, buf->index - start); \
     } \
     break; \
 }
 
 #define MATCH_BRANCH(buf, match_func) \
 { \
+    int start = buf->index; \
     ADVANCE(buf); \
     TOKEN_TYPE t = match_func(buf); \
     if (t != TOKEN_ID) \
-        return init_token(t, NULL, 0); \
+        return init_token(t, buf->src + start, buf->index - start); \
     break; \
 }
 
