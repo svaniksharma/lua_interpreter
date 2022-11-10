@@ -17,8 +17,9 @@ do {  \
 
 #define SINGULAR_TOKEN(buf, token_type) \
 { \
+    int start = buf->index; \
     ADVANCE(buf); \
-    return init_token(token_type, buf->src + buf->index-1 , 1); \
+    return init_token(token_type, buf->src + start, 1); \
 }
 
 #define LOOKAHEAD_BRANCH(buf, c, token_success, token_failure) \

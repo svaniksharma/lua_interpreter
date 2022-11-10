@@ -3,6 +3,18 @@
 #include "lexer.h"
 #include <stdio.h>
 
+static LUA_BOOL is_letter(char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
+
+static LUA_BOOL is_digit(char c) {
+    return c >= '0' && c <= '9';
+}
+
+static LUA_BOOL is_valid_id_char(char c) {
+    return is_letter(c) || is_digit(c) || c == '_';
+}
+
 static TOKEN init_token(TOKEN_TYPE type, char *lexeme, int lexeme_len) {
     TOKEN tok = { 0 };
     tok.type = type;
@@ -20,9 +32,37 @@ static TOKEN consume_str_literal(SRCBUF *buf) {
             break;
     }
     TOKEN_TYPE type = (i == buf->length) ? TOKEN_ERR : TOKEN_STR;
-    TOKEN tok = init_token(type, buf->src + buf->index, i - buf->index + 1);
+    TOKEN tok = init_token(type, buf->src + buf->index, i - buf->index);
     buf->index =  (i < buf->length) ? i + 1 : buf->length;
     return tok;
+}
+
+static LUA_BOOL is_exponent(SRCBUF *buf, LUA_BOOL exp_seen) {
+    return !exp_seen && (CURR(buf) == 'E' || CURR(buf) == 'e') 
+        && (LOOKAHEAD(buf) == '+' || LOOKAHEAD(buf) == '-' || is_digit(LOOKAHEAD(buf)));
+}
+
+static LUA_BOOL is_frac(SRCBUF *buf, LUA_BOOL frac_seen) {
+    return !frac_seen && CURR(buf) == '.';
+}
+
+static TOKEN consume_num_literal(SRCBUF *buf) {
+    int start = buf->index;
+    LUA_BOOL frac_seen = FALSE;
+    LUA_BOOL exp_seen = FALSE;
+    while (CAN_ADVANCE(buf)) {
+        if (!is_digit(CURR(buf)) && !is_exponent(buf, exp_seen) && !is_frac(buf, frac_seen)) {
+            break;
+        } else if (is_exponent(buf, exp_seen)) {
+            DOUBLE_ADVANCE(buf);
+            exp_seen = TRUE;
+            frac_seen = (frac_seen) ? FALSE : frac_seen;
+        } else if (is_frac(buf, frac_seen)) {
+            frac_seen = TRUE;
+        }
+        ADVANCE(buf);
+    }
+    return init_token(TOKEN_NUM, buf->src + start, buf->index - start);
 }
 
 static LUA_BOOL check_comment(SRCBUF *buf) {
@@ -49,18 +89,6 @@ static LUA_BOOL check_comment(SRCBUF *buf) {
         }
     }
     return TRUE;
-}
-
-static LUA_BOOL is_letter(char c) {
-    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-}
-
-static LUA_BOOL is_digit(char c) {
-    return c >= '0' && c <= '9';
-}
-
-static LUA_BOOL is_valid_id_char(char c) {
-    return is_letter(c) || is_digit(c) || c == '_';
 }
 
 static LUA_BOOL match_to_end(SRCBUF *buf, const char *str, int len) {
@@ -140,7 +168,6 @@ static TOKEN_TYPE match_n(SRCBUF *buf) {
     return TOKEN_ID;
 }
 
-// TODO: match a number literal, identifier, reserved words
 static TOKEN consume_remaining(SRCBUF *buf) {
     if (is_letter(CURR(buf)) || CURR(buf) == '_') {
         int start = buf->index;
@@ -160,7 +187,9 @@ static TOKEN consume_remaining(SRCBUF *buf) {
             case 'n': MATCH_BRANCH(buf, match_n);
         }
         consume_id(buf);
-        return init_token(TOKEN_ID, buf->src + start, buf->index - start + 1);
+        return init_token(TOKEN_ID, buf->src + start, buf->index - start);
+    } else if (is_digit(CURR(buf))) {
+        return consume_num_literal(buf);
     }
     return init_token(TOKEN_ERR, NULL, 0);
 }
