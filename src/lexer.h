@@ -103,6 +103,7 @@ typedef enum lua_token_type {
     TOKEN_DO,
     TOKEN_OR,
     TOKEN_THEN,
+    TOKEN_COMMA,
     TOKEN_NIL,
     TOKEN_NOT,
     TOKEN_UNTIL,

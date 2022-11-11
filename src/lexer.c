@@ -223,6 +223,7 @@ TOKEN scan_next_token(SRCBUF *buf) {
         case ']': SINGULAR_TOKEN(buf, TOKEN_RIGHT_BRACKET);
         case ':': SINGULAR_TOKEN(buf, TOKEN_COLON);
         case ';': SINGULAR_TOKEN(buf, TOKEN_SEMICOLON);
+        case ',': SINGULAR_TOKEN(buf, TOKEN_COMMA);
         case '"':
         case '\'':
             return consume_str_literal(buf);
