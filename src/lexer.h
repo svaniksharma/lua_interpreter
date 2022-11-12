@@ -128,4 +128,60 @@ typedef struct srcbuf {
 
 TOKEN scan_next_token(SRCBUF *buf);
 
+#ifdef LUA_DEBUG
+
+static char *token_str_debug_table[] = {
+    [TOKEN_ADD]             = "TOKEN_ADD",
+    [TOKEN_MINUS]           = "TOKEN_MINUS",
+    [TOKEN_MULT]            = "TOKEN_MULT",
+    [TOKEN_DIV]             = "TOKEN_DIV",
+    [TOKEN_EXP]             = "TOKEN_EXP",
+    [TOKEN_EQ]              = "TOKEN_EQ",
+    [TOKEN_NE]              = "TOKEN_NE",
+    [TOKEN_LEFT_PAREN]      = "TOKEN_LEFT_PAREN",
+    [TOKEN_RIGHT_PAREN]     = "TOKEN_RIGHT_PAREN",
+    [TOKEN_LEFT_BRACE]      = "TOKEN_LEFT_BRACE",
+    [TOKEN_RIGHT_BRACE]     = "TOKEN_RIGHT_BRACE",
+    [TOKEN_LEFT_BRACKET]    = "TOKEN_LEFT_BRACKET",
+    [TOKEN_RIGHT_BRACKET]   = "TOKEN_RIGHT_BRACKET",
+    [TOKEN_COLON]           = "TOKEN_COLON",
+    [TOKEN_SEMICOLON]       = "TOKEN_SEMICOLON",
+    [TOKEN_DOT]             = "TOKEN_DOT",
+    [TOKEN_CAT]             = "TOKEN_CAT",
+    [TOKEN_LE]              = "TOKEN_LE",
+    [TOKEN_LT]              = "TOKEN_LT",
+    [TOKEN_GE]              = "TOKEN_GE",
+    [TOKEN_GT]              = "TOKEN_GT",
+    [TOKEN_AND]             = "TOKEN_AND",
+    [TOKEN_END]             = "TOKEN_END",
+    [TOKEN_IF]              = "TOKEN_IF",
+    [TOKEN_ELSEIF]          = "TOKEN_ELSEIF",
+    [TOKEN_ELSE]            = "TOKEN_ELSE",
+    [TOKEN_IN]              = "TOKEN_IN",
+    [TOKEN_ASSIGN]          = "TOKEN_ASSIGN",
+    [TOKEN_STR]             = "TOKEN_STR",
+    [TOKEN_NUM]             = "TOKEN_NUM",
+    [TOKEN_WHILE]           = "TOKEN_WHILE",
+    [TOKEN_FOR]             = "TOKEN_FOR",
+    [TOKEN_TRUE]            = "TOKEN_TRUE",
+    [TOKEN_FALSE]           = "TOKEN_FALSE",
+    [TOKEN_FUNCTION]        = "TOKEN_FUNCTION",
+    [TOKEN_BREAK]           = "TOKEN_BREAK",
+    [TOKEN_LOCAL]           = "TOKEN_LOCAL",
+    [TOKEN_DO]              = "TOKEN_DO",
+    [TOKEN_OR]              = "TOKEN_OR",
+    [TOKEN_THEN]            = "TOKEN_THEN",
+    [TOKEN_COMMA]           = "TOKEN_COMMA",
+    [TOKEN_NIL]             = "TOKEN_NIL",
+    [TOKEN_NOT]             = "TOKEN_NOT",
+    [TOKEN_UNTIL]           = "TOKEN_UNTIL",
+    [TOKEN_REPEAT]          = "TOKEN_REPEAT",
+    [TOKEN_RETURN]          = "TOKEN_RETURN",
+    [TOKEN_ID]              = "TOKEN_ID",
+    [TOKEN_ERR]             = "TOKEN_ERR",
+    [TOKEN_EOF]             = "TOKEN_EOF",
+};
+
+#endif
+
 #endif

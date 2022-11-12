@@ -13,6 +13,8 @@
         } \
     } while (0)
 
+#ifdef LUA_DEBUG
+
 #define LOG_DEBUG(msg, ...) \
     do { \
         fprintf(stderr, "[DEBUG %s:%s:%d] " msg "\n", \
@@ -21,5 +23,11 @@
 
 #define SENTINEL() fprintf(stderr, "[SENTINEL] at %s:%s:%d\n", __FILE__, __FUNCTION__, __LINE__)
 
+#else
+
+#define LOG_DEBUG(msg, ...)
+#define SENTINEL()
+
+#endif
 
 #endif

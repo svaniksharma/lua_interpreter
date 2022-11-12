@@ -1,5 +1,5 @@
 CFLAGS=-std=c99
-DEBUG_FLAGS=-g -Wall
+DEBUG_FLAGS=-g -Wall -DLUA_DEBUG
 SRC=*.c
 
 all:

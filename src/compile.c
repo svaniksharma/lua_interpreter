@@ -17,6 +17,6 @@ void run(char *source, int length) {
         }
         char name[100] = { 0 };
         snprintf(name, t.lexeme_len+1, "%s", t.lexeme);
-        LOG_DEBUG("Token Type: %d; Token String: %s", t.type, name);
+        LOG_DEBUG("Token Type: %s; Token String: %s", token_str_debug_table[t.type], name);
     }
 }
