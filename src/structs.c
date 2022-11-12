@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* MEMORY ALLOCATION */
-
 ERR safe_alloc(void **ptr, int size) {
     if (size <= 0) {
         *ptr = NULL;
