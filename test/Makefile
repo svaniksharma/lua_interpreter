@@ -1,4 +1,4 @@
-SRC=../src/error.c ../src/structs.c
+SRC=../src/error.c ../src/structs.c ../src/table.c
 INCLUDE=-I ../src
 CFLAGS=-Wall -Werror -g
 %_test: %_test.c

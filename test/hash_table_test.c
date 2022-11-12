@@ -1,4 +1,4 @@
-#include "../src/structs.h"
+#include "../src/table.h"
 #include "../src/debug.h"
 #include <stdlib.h>
 
