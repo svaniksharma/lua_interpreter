@@ -19,7 +19,12 @@ typedef enum err {
             fprintf(stderr, msg ": %s\n", ##__VA_ARGS__, strerror(errno)); \
         else \
             fprintf(stderr, msg "\n", ##__VA_ARGS__); \
-    } while (0); \
+    } while (0)
+
+#define REPORT_LUA_ERR(msg, ...) \
+    do { \
+        fprintf(stderr, msg, ##__VA_ARGS__); \
+    } while (0)
 
 #define TRY do { jmp_buf _ex; if (!setjmp(_ex)) {
 #define CATCH } else {
