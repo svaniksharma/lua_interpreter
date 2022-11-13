@@ -49,8 +49,7 @@ static char *read_file(char *source, int *length) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        // lua_repl();
-        run(NULL, 0);
+        lua_repl();
     } else {
         int length = 0;
         char *source = read_file(argv[1], &length);
