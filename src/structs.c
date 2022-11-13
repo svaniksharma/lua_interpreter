@@ -63,10 +63,9 @@ ERR safe_alloc(void **ptr, int size) {
         return SUCCESS;
     }
     if (*ptr == NULL) {
-        void *alloc = malloc(size);
+        void *alloc = calloc(1, size);
         if (!alloc)
             return ALLOC_ERR;
-        memset(alloc, 0, size);
         *ptr = alloc;
         return SUCCESS;
     }
