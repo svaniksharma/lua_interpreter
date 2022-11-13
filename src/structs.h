@@ -32,8 +32,37 @@ typedef union lua_val {
 
 typedef struct lua_obj {
     LUA_TYPE type;
-    LUA_VAL *value;
+    LUA_VAL value;
 } LUA_OBJ;
+
+#define AS_NUM(obj) obj.value.n
+#define AS_BOOL(obj) obj.value.b
+
+#ifdef LUA_DEBUG
+
+void print_lua_obj(LUA_OBJ *obj);
+
+#endif
+
+/* DYNAMIC ARRAY */
+
+#define INITIAL_CAP 10
+
+typedef struct dyn_arr {
+    int n;
+    int size_each;
+    int capacity;
+    uint8_t *arr;
+} DYN_ARR;
+
+ERR init_dyn_arr(DYN_ARR *d, int size_each);
+LUA_BOOL add_dyn_arr(DYN_ARR *d, uint8_t *item);
+void destroy_dyn_arr(DYN_ARR *d);
+
+#define SIZE_DYN_ARR(d) d.n
+#define CAP_DYN_ARR(d) d.capacity
+#define ADD_DYN_ARR(d, item) add_dyn_arr(d, (uint8_t *) (item))
+#define GET_DYN_ARR(d, i, type) (* ((type *) (d.arr + (i) * sizeof(type))))
 
 /* MEMORY ALLOCATION */
 
