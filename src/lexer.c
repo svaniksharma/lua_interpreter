@@ -194,6 +194,14 @@ static TOKEN consume_remaining(SRCBUF *buf) {
     return init_token(TOKEN_ERR, NULL, 0);
 }
 
+SRCBUF init_src_buf(char *src, int length) {
+    SRCBUF buf = { 0 };
+    buf.src = src;
+    buf.length = length;
+    buf.index = 0;
+    return buf;
+}
+
 TOKEN scan_next_token(SRCBUF *buf) {
     while (CAN_ADVANCE(buf)) {
         char c = CURR(buf);

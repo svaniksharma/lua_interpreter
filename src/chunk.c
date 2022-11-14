@@ -2,10 +2,11 @@
 #include "debug.h"
 #include "structs.h"
 
-LUA_BOOL init_chunk(LUA_CHUNK *chunk) {
-    init_dyn_arr(&chunk->code, sizeof(uint8_t));
-    init_dyn_arr(&chunk->values, sizeof(LUA_REAL));
-    return TRUE;
+LUA_CHUNK init_chunk() {
+    LUA_CHUNK chunk = { 0 };
+    init_dyn_arr(&chunk.code, sizeof(uint8_t));
+    init_dyn_arr(&chunk.values, sizeof(LUA_REAL));
+    return chunk;
 }
 
 LUA_BOOL write_const_chunk(LUA_CHUNK *chunk, LUA_VAL *v) {

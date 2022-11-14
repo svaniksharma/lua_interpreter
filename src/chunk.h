@@ -23,7 +23,7 @@ typedef struct lua_chunk {
     DYN_ARR values;
 } LUA_CHUNK;
 
-LUA_BOOL init_chunk(LUA_CHUNK *chunk);
+LUA_CHUNK init_chunk();
 LUA_BOOL write_const_chunk(LUA_CHUNK *chunk, LUA_VAL *v);
 LUA_BOOL write_byte_chunk(LUA_CHUNK *chunk, uint8_t byte);
 void destroy_chunk(LUA_CHUNK *chunk);

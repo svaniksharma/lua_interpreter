@@ -4,6 +4,8 @@
 #include "lexer.h"
 #include "chunk.h"
 
+#define MAX_ERR_BUF 100
+
 typedef enum lua_prec {
     PREC_NONE,
     PREC_ASSIGNMENT,
@@ -22,7 +24,11 @@ typedef struct lua_parser {
     SRCBUF *buf;
     TOKEN prev;
     TOKEN curr;
+    LUA_BOOL panic;
+    LUA_BOOL had_err;
 } LUA_PARSER;
+
+LUA_PARSER init_lua_parser(SRCBUF *buf);
 
 typedef void (*prefix_fn)(LUA_CHUNK *c, LUA_PARSER *p);
 typedef void (*infix_fn)(LUA_CHUNK *c, LUA_PARSER *p);

@@ -4,11 +4,23 @@
 #include "compile.h"
 #include <stdio.h>
 
+static void report_parse_err(LUA_PARSER *p, TOKEN *token, const char *msg) {
+    if (p->panic)
+        return;
+    p->panic = TRUE;
+    char errbuf[MAX_ERR_BUF+1] = { 0 };
+    strncpy(errbuf, token->lexeme, token->lexeme_len);
+    fprintf(stderr, "lua: %s: found \"%s\"\n", msg, errbuf);
+    p->had_err = TRUE;
+}
+
 static void advance_parser(LUA_PARSER *p) {
     p->prev = p->curr;
     p->curr = scan_next_token(p->buf);
-    if (p->curr.type == TOKEN_ERR)
+    if (p->curr.type == TOKEN_ERR) {
+        report_parse_err(p, &p->curr, "Could not parse token");
         return; // TODO: handle error
+    }
 }
 
 static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p);
@@ -58,8 +70,10 @@ LUA_PARSE_RULE parse_rules[] = {
 
 static void grouping(LUA_CHUNK *c, LUA_PARSER *p) {
     parse_expr(c, p);
-    if (p->curr.type != TOKEN_RIGHT_PAREN)
-        REPORT_LUA_ERR("Expected ')' after expression\n");
+    if (p->curr.type != TOKEN_RIGHT_PAREN) {
+        report_parse_err(p, &p->curr, "Expected ')' after expression");
+        return;
+    }
     advance_parser(p);
 }
 
@@ -112,7 +126,8 @@ static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_PREC prec) {
     advance_parser(p);
     prefix_fn prefix_rule = parse_rules[p->prev.type].prefix;
     if (prefix_rule == NULL) {
-        return; // TODO: error handling
+        report_parse_err(p, &p->prev, "Expected expression");
+        return;
     }
     prefix_rule(c, p);
     while (prec <= parse_rules[p->curr.type].precedence) {
@@ -126,17 +141,28 @@ static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p) {
     parse_prec(c, p, PREC_ASSIGNMENT);
 }
 
-void run(char *source, int length) {
-    SRCBUF buf = { 0 };
-    buf.src = source;
-    buf.length = length;
-    buf.index = 0;
+LUA_PARSER init_lua_parser(SRCBUF *buf) {
     LUA_PARSER p = { 0 };
-    p.buf = &buf;
+    p.buf = buf;
+    p.had_err = FALSE;
+    p.panic = FALSE;
+    return p;
+}
+
+LUA_BOOL compile(LUA_CHUNK *c, char *source, int length) {
+    SRCBUF buf = init_src_buf(source, length);
+    LUA_PARSER p = init_lua_parser(&buf);
     advance_parser(&p);
-    LUA_CHUNK chunk = { 0 };
-    init_chunk(&chunk);
-    parse_expr(&chunk, &p);
+    parse_expr(c, &p);
+    if (p.curr.type != TOKEN_EOF)
+        report_parse_err(&p, &p.curr, "Unexpected token");
+    return p.had_err == FALSE;
+}
+
+void run(char *source, int length) {
+    LUA_CHUNK chunk = init_chunk();
+    if (!compile(&chunk, source, length))
+        return;
     write_byte_chunk(&chunk, OP_RETURN);
     LUA_VM vm = { 0 };
     init_vm(&vm);

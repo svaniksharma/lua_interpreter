@@ -126,6 +126,7 @@ typedef struct srcbuf {
     char *src;
 } SRCBUF;
 
+SRCBUF init_src_buf(char *src, int length);
 TOKEN scan_next_token(SRCBUF *buf);
 
 #ifdef LUA_DEBUG
