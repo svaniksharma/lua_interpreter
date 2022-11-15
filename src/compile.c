@@ -27,10 +27,9 @@ static void advance_parser(LUA_PARSER *p) {
 static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p);
 static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_PREC prec);
 static void grouping(LUA_CHUNK *c, LUA_PARSER *p);
+static void literal(LUA_CHUNK *c, LUA_PARSER *p);
 static void number(LUA_CHUNK *c, LUA_PARSER *p);
 // static void string(LUA_CHUNK *c, LUA_PARSER *p);
-static void _true(LUA_CHUNK *c, LUA_PARSER *p);
-static void _false(LUA_CHUNK *c, LUA_PARSER *p);
 static void unary(LUA_CHUNK *c, LUA_PARSER *p);
 static void binary(LUA_CHUNK *c, LUA_PARSER *p);
 
@@ -58,15 +57,15 @@ LUA_PARSE_RULE parse_rules[] = {
     [TOKEN_NUM]           = {number,   NULL,   PREC_NONE},
     [TOKEN_AND]           = {NULL,     binary, PREC_AND},
     [TOKEN_ELSE]          = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_FALSE]         = {_false,   NULL,   PREC_NONE},
+    [TOKEN_FALSE]         = {literal,  NULL,   PREC_NONE},
     [TOKEN_FOR]           = {NULL,     NULL,   PREC_NONE},
     [TOKEN_FUNCTION]      = {NULL,     NULL,   PREC_NONE},
     [TOKEN_IF]            = {NULL,     NULL,   PREC_NONE},
     [TOKEN_NOT]           = {unary,    NULL,   PREC_TERM},
-    [TOKEN_NIL]           = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_NIL]           = {literal,  NULL,   PREC_NONE},
     [TOKEN_OR]            = {NULL,     binary, PREC_OR},
     [TOKEN_RETURN]        = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_TRUE]          = {_true,    NULL,   PREC_NONE},
+    [TOKEN_TRUE]          = {literal,  NULL,   PREC_NONE},
     [TOKEN_LOCAL]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_ERR]           = {NULL,     NULL,   PREC_NONE},
@@ -91,20 +90,21 @@ static void number(LUA_CHUNK *c, LUA_PARSER *p) {
     write_byte_chunk(c, SIZE_DYN_ARR(c->values)-1);
 }
 
-static void _true(LUA_CHUNK *c, LUA_PARSER *p) {
-    LUA_BOOL b = TRUE;
-    LUA_OBJ o = init_lua_obj(BOOL, &b);
-    write_const_chunk(c, &o);
-    write_byte_chunk(c, OP_CONST);
-    write_byte_chunk(c, SIZE_DYN_ARR(c->values)-1);
-}
 
-static void _false(LUA_CHUNK *c, LUA_PARSER *p) {
-    LUA_BOOL b = FALSE;
-    LUA_OBJ o = init_lua_obj(BOOL, &b);
-    write_const_chunk(c, &o);
-    write_byte_chunk(c, OP_CONST);
-    write_byte_chunk(c, SIZE_DYN_ARR(c->values)-1);
+static void literal(LUA_CHUNK *c, LUA_PARSER *p) {
+    switch (p->prev.type) {
+        case TOKEN_FALSE:
+            write_byte_chunk(c, OP_FALSE);
+            break;
+        case TOKEN_TRUE:
+            write_byte_chunk(c, OP_TRUE);
+            break;
+        case TOKEN_NIL:
+            write_byte_chunk(c, OP_NIL);
+            break;
+        default:
+            return;
+    }
 }
 
 static void unary(LUA_CHUNK *c, LUA_PARSER *p) {

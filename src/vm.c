@@ -102,6 +102,15 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
             }
             case OP_AND: PERFORM_BINARY_OP_WITH_BOOL(&&);
             case OP_OR: PERFORM_BINARY_OP_WITH_BOOL(||);
+            case OP_TRUE:
+            case OP_FALSE: {
+                LUA_BOOL b = (opcode == OP_TRUE) ? TRUE : FALSE;
+                push_vm_stack(vm, init_lua_obj(BOOL, &b));
+                break;
+            }
+            case OP_NIL:
+                push_vm_stack(vm, init_lua_obj(NIL, NULL));
+                break;
             case OP_CAT:
                 break;
             case OP_RETURN: {

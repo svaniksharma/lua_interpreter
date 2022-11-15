@@ -36,6 +36,9 @@ void print_lua_obj(LUA_OBJ *o) {
         case BOOL:
             LOG_DEBUG("%s", o->value.b == TRUE ? "true" : "false");
             break;
+        case NIL:
+            LOG_DEBUG("nil");
+            break;
         default:
             break;
     }

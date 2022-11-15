@@ -15,6 +15,7 @@ typedef double LUA_REAL;
 typedef enum lua_type {
     BOOL,
     REAL,
+    NIL,
     STR,
 } LUA_TYPE;
 
@@ -39,7 +40,7 @@ LUA_OBJ init_lua_obj(LUA_TYPE type, void *ptr);
 LUA_OBJ init_lua_obj_val(LUA_TYPE type, LUA_VAL v);
 
 #define IS_NUM(obj) (obj.type == REAL)
-#define IS_BOOL(obj) (obj.type == BOOL)
+#define IS_BOOL(obj) (obj.type == BOOL || obj.type == NIL)
 #define IS_STR(obj) (obj.type == STR)
 
 #define AS_NUM(obj) obj.value.n
