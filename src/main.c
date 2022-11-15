@@ -11,7 +11,8 @@ static void lua_repl() {
     char line[MAX_LINE_LEN+1];
     printf("> ");
     while (fgets(line, MAX_LINE_LEN+1, stdin) != NULL) {
-        run(line, strlen(line)); // run the line
+        if (strlen(line) > 0 && line[0] != '\n')
+            run(line, strlen(line)); // run the line
         printf("> ");
     }
 }

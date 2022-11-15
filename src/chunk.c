@@ -5,12 +5,12 @@
 LUA_CHUNK init_chunk() {
     LUA_CHUNK chunk = { 0 };
     init_dyn_arr(&chunk.code, sizeof(uint8_t));
-    init_dyn_arr(&chunk.values, sizeof(LUA_REAL));
+    init_dyn_arr(&chunk.values, sizeof(LUA_OBJ));
     return chunk;
 }
 
-LUA_BOOL write_const_chunk(LUA_CHUNK *chunk, LUA_VAL *v) {
-    return ADD_DYN_ARR(&chunk->values, v);
+LUA_BOOL write_const_chunk(LUA_CHUNK *chunk, LUA_OBJ *o) {
+    return ADD_DYN_ARR(&chunk->values, o);
 }
 
 LUA_BOOL write_byte_chunk(LUA_CHUNK *chunk, uint8_t byte) {

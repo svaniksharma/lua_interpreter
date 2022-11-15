@@ -1,6 +1,12 @@
 #include "debug.h"
 #include "structs.h"
 #include "vm.h"
+#include <math.h>
+
+static void report_runtime_err(const char *msg) {
+    fprintf(stderr, "%s\n", msg);
+}
+
 
 static void push_vm_stack(LUA_VM *vm, LUA_OBJ v) {
     *vm->top = v;
@@ -12,10 +18,14 @@ static LUA_OBJ pop_vm_stack(LUA_VM *vm) {
     return *vm->top;
 }
 
+static LUA_OBJ peek_vm_stack(LUA_VM *vm) {
+    return *(vm->top - 1);
+}
+
 void init_vm(LUA_VM *vm) {
     vm->curr_chunk = NULL;
     vm->ip = NULL;
-    SAFE_ALLOC(&vm->stack, DEFAULT_STACK_SIZE * sizeof(LUA_OBJ));
+    memset(vm->stack, 0, sizeof(vm->stack));
     vm->top = vm->stack;
 }
 
@@ -27,17 +37,17 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
         switch (opcode) {
             case OP_CONST: {
                 int index = *vm->ip++;
-                LUA_OBJ o = { 0 };
-                o.type = REAL;
-                o.value = GET_DYN_ARR(chunk->values, index, LUA_VAL);
+                LUA_OBJ o = GET_DYN_ARR(chunk->values, index, LUA_OBJ);
                 push_vm_stack(vm, o);
                 break;
             }
             case OP_NEGATE: {
-                LUA_REAL r = AS_NUM(pop_vm_stack(vm));
-                LUA_VAL v = { 0 };
-                v.n = -r;
-                LUA_OBJ o = { REAL, v };
+                if (!IS_NUM(peek_vm_stack(vm))) {
+                    report_runtime_err("Expected real number");
+                    return;
+                }
+                LUA_REAL r = -AS_NUM(pop_vm_stack(vm));
+                LUA_OBJ o = init_lua_obj(REAL, &r);
                 push_vm_stack(vm, o);
                 break;
             }
@@ -45,8 +55,30 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
             case OP_SUB: PERFORM_NUM_BINARY_OP(-);
             case OP_MULT: PERFORM_NUM_BINARY_OP(*);
             case OP_DIV: PERFORM_NUM_BINARY_OP(/);
-            case OP_EXP:
+            case OP_EXP: {
+                LUA_OBJ second_obj = pop_vm_stack(vm);
+                LUA_OBJ first_obj = pop_vm_stack(vm);
+                if (!IS_NUM(first_obj) || !IS_NUM(second_obj)) {
+                    report_runtime_err("Expected number");
+                    return;
+                }
+                LUA_REAL second = AS_NUM(second_obj);
+                LUA_REAL first = AS_NUM(first_obj);
+                LUA_REAL res = pow(first, second);
+                LUA_OBJ obj = init_lua_obj(REAL, &res);
+                push_vm_stack(vm, obj);
                 break;
+            }
+            case OP_NOT: {
+                if (!IS_BOOL(peek_vm_stack(vm))) {
+                    report_runtime_err("Expected boolean");
+                    return;
+                }
+                LUA_BOOL b = !AS_BOOL(pop_vm_stack(vm));
+                LUA_OBJ o = init_lua_obj(BOOL, &b);
+                push_vm_stack(vm, o);
+                break;
+            }
             case OP_CAT:
                 break;
             case OP_RETURN: {
@@ -64,5 +96,4 @@ void destroy_vm(LUA_VM *vm) {
     vm->ip = NULL;
     vm->top = NULL;
     vm->curr_chunk = NULL;
-    SAFE_FREE(&vm->stack);
 }

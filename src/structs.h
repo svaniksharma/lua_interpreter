@@ -35,8 +35,16 @@ typedef struct lua_obj {
     LUA_VAL value;
 } LUA_OBJ;
 
+LUA_OBJ init_lua_obj(LUA_TYPE type, void *ptr);
+LUA_OBJ init_lua_obj_val(LUA_TYPE type, LUA_VAL v);
+
+#define IS_NUM(obj) (obj.type == REAL)
+#define IS_BOOL(obj) (obj.type == BOOL)
+#define IS_STR(obj) (obj.type == STR)
+
 #define AS_NUM(obj) obj.value.n
 #define AS_BOOL(obj) obj.value.b
+#define AS_STR(obj) ((LUA_STR *) (obj.value.ptr))
 
 #ifdef LUA_DEBUG
 

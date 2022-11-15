@@ -163,7 +163,7 @@ static TOKEN_TYPE match_t(SRCBUF *buf) {
 static TOKEN_TYPE match_n(SRCBUF *buf) {
     switch (CURR(buf)) {
         case 'i': MATCH_RET_TYPE(buf, "l", 1, TOKEN_NIL);
-        case 'o': MATCH_RET_TYPE(buf, "o", 1, TOKEN_NOT);
+        case 'o': MATCH_RET_TYPE(buf, "t", 1, TOKEN_NOT);
     }
     return TOKEN_ID;
 }

@@ -4,6 +4,30 @@
 #include <stdlib.h>
 #include <string.h>
 
+LUA_OBJ init_lua_obj(LUA_TYPE type, void *ptr) {
+    LUA_OBJ o = { 0 };
+    o.type = type;
+    switch (o.type) {
+        case REAL:
+            o.value.n = * (LUA_REAL *) ptr;
+            break;
+        case BOOL:
+            o.value.b = * (LUA_BOOL *) ptr;
+            break;
+        default:
+            o.value.ptr = ptr;
+            break;
+    }
+    return o;
+}
+
+LUA_OBJ init_lua_obj_val(LUA_TYPE type, LUA_VAL v) {
+    LUA_OBJ o = { 0 };
+    o.type = type;
+    o.value = v;
+    return o;
+}
+
 void print_lua_obj(LUA_OBJ *o) {
     switch (o->type) {
         case REAL:
