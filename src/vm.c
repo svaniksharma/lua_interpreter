@@ -22,6 +22,16 @@ static LUA_OBJ peek_vm_stack(LUA_VM *vm) {
     return *(vm->top - 1);
 }
 
+static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b) {
+    if (a->type != b->type)
+        return FALSE;
+    switch (a->type) {
+        case BOOL: return a->value.b == b->value.b;
+        case REAL: return a->value.n == b->value.n;
+        default: return FALSE;
+    }
+}
+
 void init_vm(LUA_VM *vm) {
     vm->curr_chunk = NULL;
     vm->ip = NULL;
@@ -69,6 +79,17 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
                 push_vm_stack(vm, obj);
                 break;
             }
+            case OP_EQ: {
+                LUA_OBJ second_obj = pop_vm_stack(vm);
+                LUA_OBJ first_obj = pop_vm_stack(vm);
+                LUA_BOOL b = equal_objs(&first_obj, &second_obj);
+                push_vm_stack(vm, init_lua_obj(BOOL, &b));
+                break;
+            }
+            case OP_LE: PERFORM_BOOL_BINARY_OP(<=);
+            case OP_LT: PERFORM_BOOL_BINARY_OP(<);
+            case OP_GE: PERFORM_BOOL_BINARY_OP(>=);
+            case OP_GT: PERFORM_BOOL_BINARY_OP(>);
             case OP_NOT: {
                 if (!IS_BOOL(peek_vm_stack(vm))) {
                     report_runtime_err("Expected boolean");

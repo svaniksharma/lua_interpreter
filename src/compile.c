@@ -2,6 +2,7 @@
 #include "lexer.h"
 #include "vm.h"
 #include "compile.h"
+#include "table.h"
 #include <stdio.h>
 
 static void report_parse_err(LUA_PARSER *p, TOKEN *token, const char *msg) {
@@ -27,6 +28,7 @@ static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p);
 static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_PREC prec);
 static void grouping(LUA_CHUNK *c, LUA_PARSER *p);
 static void number(LUA_CHUNK *c, LUA_PARSER *p);
+// static void string(LUA_CHUNK *c, LUA_PARSER *p);
 static void _true(LUA_CHUNK *c, LUA_PARSER *p);
 static void _false(LUA_CHUNK *c, LUA_PARSER *p);
 static void unary(LUA_CHUNK *c, LUA_PARSER *p);
@@ -45,12 +47,12 @@ LUA_PARSE_RULE parse_rules[] = {
     [TOKEN_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
     [TOKEN_DIV]           = {NULL,     binary, PREC_FACTOR},
     [TOKEN_MULT]          = {NULL,     binary, PREC_FACTOR},
-    [TOKEN_EQ]            = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_EQ]            = {NULL,     binary, PREC_TERM},
     [TOKEN_ASSIGN]        = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_GT]            = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_GE]            = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_LT]            = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_LE]            = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_GT]            = {NULL,     binary, PREC_TERM},
+    [TOKEN_GE]            = {NULL,     binary, PREC_TERM},
+    [TOKEN_LT]            = {NULL,     binary, PREC_TERM},
+    [TOKEN_LE]            = {NULL,     binary, PREC_TERM},
     [TOKEN_ID]            = {NULL,     NULL,   PREC_NONE},
     [TOKEN_STR]           = {NULL,     NULL,   PREC_NONE},
     [TOKEN_NUM]           = {number,   NULL,   PREC_NONE},
@@ -139,6 +141,21 @@ static void binary(LUA_CHUNK *c, LUA_PARSER *p) {
             break;
         case TOKEN_EXP:
             write_byte_chunk(c, OP_EXP);
+            break;
+        case TOKEN_EQ:
+            write_byte_chunk(c, OP_EQ);
+            break;
+        case TOKEN_LE:
+            write_byte_chunk(c, OP_LE);
+            break;
+        case TOKEN_LT:
+            write_byte_chunk(c, OP_LT);
+            break;
+        case TOKEN_GE:
+            write_byte_chunk(c, OP_GE);
+            break;
+        case TOKEN_GT:
+            write_byte_chunk(c, OP_GT);
             break;
         default:
             return;
