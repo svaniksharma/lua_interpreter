@@ -19,12 +19,6 @@ typedef enum lua_type {
     STR,
 } LUA_TYPE;
 
-typedef struct lua_str {
-    int size;
-    char *str;
-    uint32_t hash;
-} LUA_STR;
-
 typedef union lua_val {
     LUA_BOOL b;
     LUA_REAL n;

@@ -32,6 +32,7 @@ static void number(LUA_CHUNK *c, LUA_PARSER *p);
 // static void string(LUA_CHUNK *c, LUA_PARSER *p);
 static void unary(LUA_CHUNK *c, LUA_PARSER *p);
 static void binary(LUA_CHUNK *c, LUA_PARSER *p);
+static void eof(LUA_CHUNK *c, LUA_PARSER *p);
 
 LUA_PARSE_RULE parse_rules[] = {
     [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
@@ -69,7 +70,7 @@ LUA_PARSE_RULE parse_rules[] = {
     [TOKEN_LOCAL]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_ERR]           = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_EOF]           = {eof,      NULL,   PREC_NONE},
 };
 
 
@@ -166,6 +167,10 @@ static void binary(LUA_CHUNK *c, LUA_PARSER *p) {
         default:
             return;
     }
+}
+
+static void eof(LUA_CHUNK *c, LUA_PARSER *p) {
+    write_byte_chunk(c, OP_RETURN);
 }
 
 static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_PREC prec) {

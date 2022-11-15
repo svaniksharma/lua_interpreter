@@ -205,9 +205,9 @@ SRCBUF init_src_buf(char *src, int length) {
 TOKEN scan_next_token(SRCBUF *buf) {
     while (CAN_ADVANCE(buf)) {
         char c = CURR(buf);
-        if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
             ADVANCE(buf);
-        else if (c == '-' && LOOKAHEAD(buf) == '-') {
+        } else if (c == '-' && LOOKAHEAD(buf) == '-') {
             DOUBLE_ADVANCE(buf);
             if (!check_comment(buf))
                 return init_token(TOKEN_ERR, NULL, 0);

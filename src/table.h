@@ -25,6 +25,7 @@ ERR init_table(TABLE *table, hash_func hash);
 int size_table(TABLE *table);
 LUA_BOOL put_table(TABLE *table, void *key, void *value);
 void *get_table(TABLE *table, void *key);
+char *get_table_str(TABLE *table, char *str);
 LUA_BOOL remove_table(TABLE *table, void *key);
 void destroy_table(TABLE *table);
 

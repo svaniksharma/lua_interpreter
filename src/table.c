@@ -71,7 +71,7 @@ LUA_BOOL put_table(TABLE *table, void *key, void *value) {
         if (resize_table(table) != SUCCESS)
             return FALSE;
     }
-    if (key == NULL || value == NULL)
+    if (key == NULL)
         return FALSE;
     ENTRY *entry = find_entry_loc(table->entries, table->capacity, table->hash, key);
     LUA_BOOL new_key_inserted = entry->key == NULL && entry->value == NULL;
@@ -87,6 +87,11 @@ void *get_table(TABLE *table, void *key) {
         return NULL;
     ENTRY *entry = find_entry_loc(table->entries, table->capacity, table->hash, key);
     return (entry->key == NULL) ? NULL : entry->value;
+}
+
+// TODO: implement for string interning
+char *get_table_str(TABLE *table, char *key) {
+    return NULL;
 }
 
 LUA_BOOL remove_table(TABLE *table, void *key) {
