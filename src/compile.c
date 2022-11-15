@@ -47,16 +47,16 @@ LUA_PARSE_RULE parse_rules[] = {
     [TOKEN_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
     [TOKEN_DIV]           = {NULL,     binary, PREC_FACTOR},
     [TOKEN_MULT]          = {NULL,     binary, PREC_FACTOR},
-    [TOKEN_EQ]            = {NULL,     binary, PREC_TERM},
+    [TOKEN_EQ]            = {NULL,     binary, PREC_EQUALITY},
     [TOKEN_ASSIGN]        = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_GT]            = {NULL,     binary, PREC_TERM},
-    [TOKEN_GE]            = {NULL,     binary, PREC_TERM},
-    [TOKEN_LT]            = {NULL,     binary, PREC_TERM},
-    [TOKEN_LE]            = {NULL,     binary, PREC_TERM},
+    [TOKEN_GT]            = {NULL,     binary, PREC_COMPARISON},
+    [TOKEN_GE]            = {NULL,     binary, PREC_COMPARISON},
+    [TOKEN_LT]            = {NULL,     binary, PREC_COMPARISON},
+    [TOKEN_LE]            = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_ID]            = {NULL,     NULL,   PREC_NONE},
     [TOKEN_STR]           = {NULL,     NULL,   PREC_NONE},
     [TOKEN_NUM]           = {number,   NULL,   PREC_NONE},
-    [TOKEN_AND]           = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_AND]           = {NULL,     binary, PREC_AND},
     [TOKEN_ELSE]          = {NULL,     NULL,   PREC_NONE},
     [TOKEN_FALSE]         = {_false,   NULL,   PREC_NONE},
     [TOKEN_FOR]           = {NULL,     NULL,   PREC_NONE},
@@ -64,7 +64,7 @@ LUA_PARSE_RULE parse_rules[] = {
     [TOKEN_IF]            = {NULL,     NULL,   PREC_NONE},
     [TOKEN_NOT]           = {unary,    NULL,   PREC_TERM},
     [TOKEN_NIL]           = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_OR]            = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_OR]            = {NULL,     binary, PREC_OR},
     [TOKEN_RETURN]        = {NULL,     NULL,   PREC_NONE},
     [TOKEN_TRUE]          = {_true,    NULL,   PREC_NONE},
     [TOKEN_LOCAL]         = {NULL,     NULL,   PREC_NONE},
@@ -156,6 +156,12 @@ static void binary(LUA_CHUNK *c, LUA_PARSER *p) {
             break;
         case TOKEN_GT:
             write_byte_chunk(c, OP_GT);
+            break;
+        case TOKEN_AND:
+            write_byte_chunk(c, OP_AND);
+            break;
+        case TOKEN_OR:
+            write_byte_chunk(c, OP_OR);
             break;
         default:
             return;

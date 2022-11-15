@@ -61,10 +61,10 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
                 push_vm_stack(vm, o);
                 break;
             }
-            case OP_ADD: PERFORM_NUM_BINARY_OP(+);
-            case OP_SUB: PERFORM_NUM_BINARY_OP(-);
-            case OP_MULT: PERFORM_NUM_BINARY_OP(*);
-            case OP_DIV: PERFORM_NUM_BINARY_OP(/);
+            case OP_ADD: PERFORM_BINARY_OP_WITH_NUM(+, LUA_REAL, REAL);
+            case OP_SUB: PERFORM_BINARY_OP_WITH_NUM(-, LUA_REAL, REAL);
+            case OP_MULT: PERFORM_BINARY_OP_WITH_NUM(*, LUA_REAL, REAL);
+            case OP_DIV: PERFORM_BINARY_OP_WITH_NUM(/, LUA_REAL, REAL);
             case OP_EXP: {
                 LUA_OBJ second_obj = pop_vm_stack(vm);
                 LUA_OBJ first_obj = pop_vm_stack(vm);
@@ -86,10 +86,10 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
                 push_vm_stack(vm, init_lua_obj(BOOL, &b));
                 break;
             }
-            case OP_LE: PERFORM_BOOL_BINARY_OP(<=);
-            case OP_LT: PERFORM_BOOL_BINARY_OP(<);
-            case OP_GE: PERFORM_BOOL_BINARY_OP(>=);
-            case OP_GT: PERFORM_BOOL_BINARY_OP(>);
+            case OP_LE: PERFORM_BINARY_OP_WITH_NUM(<=, LUA_BOOL, REAL);
+            case OP_LT: PERFORM_BINARY_OP_WITH_NUM(<, LUA_BOOL, REAL);
+            case OP_GE: PERFORM_BINARY_OP_WITH_NUM(>=, LUA_BOOL, REAL);
+            case OP_GT: PERFORM_BINARY_OP_WITH_NUM(>, LUA_BOOL, REAL);
             case OP_NOT: {
                 if (!IS_BOOL(peek_vm_stack(vm))) {
                     report_runtime_err("Expected boolean");
@@ -100,6 +100,8 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
                 push_vm_stack(vm, o);
                 break;
             }
+            case OP_AND: PERFORM_BINARY_OP_WITH_BOOL(&&);
+            case OP_OR: PERFORM_BINARY_OP_WITH_BOOL(||);
             case OP_CAT:
                 break;
             case OP_RETURN: {

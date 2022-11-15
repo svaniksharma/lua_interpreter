@@ -3,7 +3,7 @@
 
 #include "chunk.h"
 
-#define PERFORM_NUM_BINARY_OP(op) \
+#define PERFORM_BINARY_OP_WITH_NUM(op, decl, type) \
 { \
     LUA_OBJ second_obj = pop_vm_stack(vm); \
     LUA_OBJ first_obj = pop_vm_stack(vm); \
@@ -13,27 +13,28 @@
     } \
     LUA_REAL second = AS_NUM(second_obj); \
     LUA_REAL first = AS_NUM(first_obj); \
-    LUA_REAL res = first op second; \
-    LUA_OBJ obj = init_lua_obj(REAL, &res); \
+    decl res = first op second; \
+    LUA_OBJ obj = init_lua_obj(type, &res); \
     push_vm_stack(vm, obj); \
     break; \
 }
 
-#define PERFORM_BOOL_BINARY_OP(op) \
+#define PERFORM_BINARY_OP_WITH_BOOL(op) \
 { \
     LUA_OBJ second_obj = pop_vm_stack(vm); \
     LUA_OBJ first_obj = pop_vm_stack(vm); \
-    if (!IS_NUM(first_obj) || !IS_NUM(second_obj)) { \
-        report_runtime_err("Expected number"); \
+    if (!IS_BOOL(first_obj) || !IS_BOOL(second_obj)) { \
+        report_runtime_err("Expected boolean"); \
         return; \
     } \
-    LUA_REAL second = AS_NUM(second_obj); \
-    LUA_REAL first = AS_NUM(first_obj); \
+    LUA_BOOL second = AS_BOOL(second_obj); \
+    LUA_BOOL first = AS_BOOL(first_obj); \
     LUA_BOOL res = first op second; \
     LUA_OBJ obj = init_lua_obj(BOOL, &res); \
     push_vm_stack(vm, obj); \
     break; \
 }
+
 
 #define DEFAULT_STACK_SIZE 1024
 
