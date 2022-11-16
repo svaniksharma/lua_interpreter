@@ -59,17 +59,13 @@ void print_lua_obj(LUA_OBJ *o) {
 #endif
 
 static LUA_BOOL resize_dyn_arr(uint8_t **arr, int size_each, int old_capacity, int new_capacity) {
-    TRY {
-        uint8_t *new_arr = realloc(*arr, size_each * new_capacity);
-        THROW(new_arr == NULL);
-        if (new_arr != *arr)
-            *arr = new_arr;
-    } CATCH {
-        REPORT_C_ERR("Couldn't reallocate array");
-        return FALSE;
-    }
-    END_TRY;
+    uint8_t *new_arr = realloc(*arr, size_each * new_capacity);
+    CHECK(new_arr != NULL);
+    if (new_arr != *arr)
+        *arr = new_arr;
     return TRUE;
+lua_err:
+    return FALSE;
 }
 
 ERR init_dyn_arr(DYN_ARR *d, int size_each) {

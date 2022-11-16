@@ -24,10 +24,7 @@ static ENTRY *find_entry_loc(ENTRY *entries, int capacity, hash_func hash, void 
 static ERR resize_table(TABLE *table) {
     int new_capacity = table->capacity * 2;
     ENTRY *new_entries = NULL;
-    if (SAFE_ALLOC(&new_entries, new_capacity * sizeof(ENTRY)) != SUCCESS) {
-        REPORT_C_ERR("Couldn't allocate memory for resizing table");
-        return ALLOC_ERR;
-    }
+    CHECK(SAFE_ALLOC(&new_entries, new_capacity * sizeof(ENTRY)) != ALLOC_ERR);
     for (int i = 0; i < new_capacity; i++) {
         new_entries[i].key = NULL;
         new_entries[i].value = NULL;
@@ -47,17 +44,18 @@ static ERR resize_table(TABLE *table) {
     table->capacity = new_capacity;
     table->entries = new_entries;
     return SUCCESS;
+lua_err:
+    return ALLOC_ERR;
 }
 
 ERR init_table(TABLE *table, hash_func hash) {
     table->size = 0;
     table->capacity = INIT_TABLE_CAPACITY;
     table->hash = hash;
-    if (SAFE_ALLOC(&table->entries, table->capacity * sizeof(ENTRY)) != SUCCESS) {
-        REPORT_C_ERR("Couldn't allocate memory for hash table");
-        return ALLOC_ERR;
-    }
+    CHECK(SAFE_ALLOC(&table->entries, table->capacity * sizeof(ENTRY)) != ALLOC_ERR);
     return SUCCESS;
+lua_err:
+    return FAIL;
 }
 
 int size_table(TABLE *table) {
