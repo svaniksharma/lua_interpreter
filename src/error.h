@@ -26,6 +26,16 @@ typedef enum err {
         fprintf(stderr, msg, ##__VA_ARGS__); \
     } while (0)
 
+#define CHECK(cond) \
+    do { \
+        if (!(cond)) { \
+            fprintf(stderr, "[%s:%s:%d] %s\n", \
+                    __FILE__, __FUNCTION__, __LINE__, strerror(errno)); \
+            errno = 0; \
+            goto lua_err; \
+        } \
+    } while (0)
+
 #define TRY do { jmp_buf _ex; if (!setjmp(_ex)) {
 #define CATCH } else {
 #define END_TRY } } while (0)

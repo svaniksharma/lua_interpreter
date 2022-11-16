@@ -88,9 +88,8 @@ void *get_table(TABLE *table, void *key) {
     return (entry->key == NULL) ? NULL : entry->value;
 }
 
-// TODO: implement for string interning
 LUA_STR *get_table_str(TABLE *table, char *key, int size) {
-    uint32_t key_hash = str_hash(key);
+    uint32_t key_hash = str_hash_len(key, size);
     uint32_t index = key_hash % table->capacity;
     while (TRUE) {
         ENTRY *entry = &table->entries[index];

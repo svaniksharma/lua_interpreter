@@ -10,6 +10,7 @@ typedef enum opcode {
     OP_DIV,
     OP_EXP,
     OP_EQ,
+    OP_NE,
     OP_GT,
     OP_GE,
     OP_LT,

@@ -32,11 +32,44 @@ static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b, TABLE *str_table) {
         case STR:  {
             LUA_STR *a_str = (LUA_STR *) a->value.ptr;
             LUA_STR *b_str = (LUA_STR *) b->value.ptr;
-            return get_table_str(str_table, a_str->str, a_str->size) == get_table_str(str_table, b_str->str, b_str->size);
+            return a_str == b_str;
         }
+        case NIL: return TRUE;
         default: return FALSE;
     }
     return FALSE; // unreachable
+}
+
+static void str_cat(LUA_VM *vm) {
+    LUA_OBJ second_obj = pop_vm_stack(vm);
+    LUA_OBJ first_obj = pop_vm_stack(vm);
+    if (!IS_STR(second_obj) || !IS_STR(first_obj)) {
+        report_runtime_err("Expected string");
+        return;
+    }
+    LUA_STR *b = AS_STR(second_obj);
+    LUA_STR *a = AS_STR(first_obj);
+    char *key = NULL;
+    LUA_STR *str = NULL;
+    CHECK(SAFE_ALLOC(&key, a->size + b->size + 1) != ALLOC_ERR);
+    strncpy(key, a->str, a->size);
+    strncat(key, b->str, b->size);
+    key[a->size + b->size] = '\0';
+    str = get_table_str(&vm->strings, key, a->size + b->size);
+    if (str == NULL) {
+        CHECK(SAFE_ALLOC(&str, sizeof(LUA_STR)) != ALLOC_ERR);
+        str->size = a->size + b->size;
+        str->str = key;
+        str->hash = str_hash(key);
+        put_table(&vm->strings, str, NULL);
+    }
+    LUA_OBJ obj = init_lua_obj(STR, str);
+    push_vm_stack(vm, obj);
+    return;
+lua_err:
+    SAFE_FREE(&key);
+    SAFE_FREE(&str);
+    return;
 }
 
 void init_vm(LUA_VM *vm) {
@@ -87,17 +120,19 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
                 push_vm_stack(vm, obj);
                 break;
             }
-            case OP_EQ: {
+            case OP_EQ:
+            case OP_NE: {
                 LUA_OBJ second_obj = pop_vm_stack(vm);
                 LUA_OBJ first_obj = pop_vm_stack(vm);
                 LUA_BOOL b = equal_objs(&first_obj, &second_obj, &vm->strings);
+                b = (opcode == OP_EQ) ? b : !b;
                 push_vm_stack(vm, init_lua_obj(BOOL, &b));
                 break;
             }
-            case OP_LE: PERFORM_BINARY_OP_WITH_NUM(<=, LUA_BOOL, REAL);
-            case OP_LT: PERFORM_BINARY_OP_WITH_NUM(<, LUA_BOOL, REAL);
-            case OP_GE: PERFORM_BINARY_OP_WITH_NUM(>=, LUA_BOOL, REAL);
-            case OP_GT: PERFORM_BINARY_OP_WITH_NUM(>, LUA_BOOL, REAL);
+            case OP_LE: PERFORM_BINARY_OP_WITH_NUM(<=, LUA_BOOL, BOOL);
+            case OP_LT: PERFORM_BINARY_OP_WITH_NUM(<, LUA_BOOL, BOOL);
+            case OP_GE: PERFORM_BINARY_OP_WITH_NUM(>=, LUA_BOOL, BOOL);
+            case OP_GT: PERFORM_BINARY_OP_WITH_NUM(>, LUA_BOOL, BOOL);
             case OP_NOT: {
                 if (!IS_BOOL(peek_vm_stack(vm))) {
                     report_runtime_err("Expected boolean");
@@ -120,6 +155,7 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
                 push_vm_stack(vm, init_lua_obj(NIL, NULL));
                 break;
             case OP_CAT:
+                str_cat(vm);
                 break;
             case OP_RETURN: {
                 LUA_OBJ o = pop_vm_stack(vm);

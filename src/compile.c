@@ -43,10 +43,12 @@ LUA_PARSE_RULE parse_rules[] = {
     [TOKEN_MINUS]         = {unary,    binary, PREC_TERM},
     [TOKEN_ADD]           = {NULL,     binary, PREC_TERM},
     [TOKEN_EXP]           = {NULL,     binary, PREC_TERM},
+    [TOKEN_CAT]           = {NULL,     binary, PREC_CAT},
     [TOKEN_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
     [TOKEN_DIV]           = {NULL,     binary, PREC_FACTOR},
     [TOKEN_MULT]          = {NULL,     binary, PREC_FACTOR},
-    [TOKEN_EQ]            = {NULL,     binary, PREC_EQUALITY},
+    [TOKEN_EQ]            = {NULL,     binary, PREC_COMPARISON},
+    [TOKEN_NE]            = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_ASSIGN]        = {NULL,     NULL,   PREC_NONE},
     [TOKEN_GT]            = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_GE]            = {NULL,     binary, PREC_COMPARISON},
@@ -145,6 +147,9 @@ static void binary(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
         case TOKEN_EQ:
             write_byte_chunk(c, OP_EQ);
             break;
+        case TOKEN_NE:
+            write_byte_chunk(c, OP_NE);
+            break;
         case TOKEN_LE:
             write_byte_chunk(c, OP_LE);
             break;
@@ -162,6 +167,9 @@ static void binary(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
             break;
         case TOKEN_OR:
             write_byte_chunk(c, OP_OR);
+            break;
+        case TOKEN_CAT:
+            write_byte_chunk(c, OP_CAT);
             break;
         default:
             return;
