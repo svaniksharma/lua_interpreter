@@ -1,6 +1,5 @@
 #include "debug.h"
 #include "lexer.h"
-#include "vm.h"
 #include "compile.h"
 #include "table.h"
 #include <stdio.h>
@@ -24,15 +23,15 @@ static void advance_parser(LUA_PARSER *p) {
     }
 }
 
-static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p);
-static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_PREC prec);
-static void grouping(LUA_CHUNK *c, LUA_PARSER *p);
-static void literal(LUA_CHUNK *c, LUA_PARSER *p);
-static void number(LUA_CHUNK *c, LUA_PARSER *p);
-// static void string(LUA_CHUNK *c, LUA_PARSER *p);
-static void unary(LUA_CHUNK *c, LUA_PARSER *p);
-static void binary(LUA_CHUNK *c, LUA_PARSER *p);
-static void eof(LUA_CHUNK *c, LUA_PARSER *p);
+static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_PREC prec);
+static void grouping(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+static void literal(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+static void number(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+static void string(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+static void unary(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+static void binary(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+static void eof(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
 
 LUA_PARSE_RULE parse_rules[] = {
     [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
@@ -54,7 +53,7 @@ LUA_PARSE_RULE parse_rules[] = {
     [TOKEN_LT]            = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_LE]            = {NULL,     binary, PREC_COMPARISON},
     [TOKEN_ID]            = {NULL,     NULL,   PREC_NONE},
-    [TOKEN_STR]           = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_STR]           = {string,   NULL,   PREC_NONE},
     [TOKEN_NUM]           = {number,   NULL,   PREC_NONE},
     [TOKEN_AND]           = {NULL,     binary, PREC_AND},
     [TOKEN_ELSE]          = {NULL,     NULL,   PREC_NONE},
@@ -74,8 +73,8 @@ LUA_PARSE_RULE parse_rules[] = {
 };
 
 
-static void grouping(LUA_CHUNK *c, LUA_PARSER *p) {
-    parse_expr(c, p);
+static void grouping(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
+    parse_expr(c, p, vm);
     if (p->curr.type != TOKEN_RIGHT_PAREN) {
         report_parse_err(p, &p->curr, "Expected ')' after expression");
         return;
@@ -83,7 +82,7 @@ static void grouping(LUA_CHUNK *c, LUA_PARSER *p) {
     advance_parser(p);
 }
 
-static void number(LUA_CHUNK *c, LUA_PARSER *p) {
+static void number(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
     LUA_REAL r = strtod(p->prev.lexeme, NULL);
     LUA_OBJ o = init_lua_obj(REAL, &r);
     write_const_chunk(c, &o);
@@ -92,7 +91,7 @@ static void number(LUA_CHUNK *c, LUA_PARSER *p) {
 }
 
 
-static void literal(LUA_CHUNK *c, LUA_PARSER *p) {
+static void literal(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
     switch (p->prev.type) {
         case TOKEN_FALSE:
             write_byte_chunk(c, OP_FALSE);
@@ -108,9 +107,9 @@ static void literal(LUA_CHUNK *c, LUA_PARSER *p) {
     }
 }
 
-static void unary(LUA_CHUNK *c, LUA_PARSER *p) {
+static void unary(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
     TOKEN_TYPE prev_type = p->prev.type;
-    parse_prec(c, p, PREC_UNARY);
+    parse_prec(c, p, vm, PREC_UNARY);
     switch (prev_type) {
         case TOKEN_MINUS:
             write_byte_chunk(c, OP_NEGATE);
@@ -123,10 +122,10 @@ static void unary(LUA_CHUNK *c, LUA_PARSER *p) {
     }
 }
 
-static void binary(LUA_CHUNK *c, LUA_PARSER *p) {
+static void binary(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
     TOKEN_TYPE type = p->prev.type;
     LUA_PARSE_RULE rule = parse_rules[type];
-    parse_prec(c, p, (LUA_PREC) (rule.precedence + 1));
+    parse_prec(c, p, vm, (LUA_PREC) (rule.precedence + 1));
     switch (type) {
         case TOKEN_ADD:
             write_byte_chunk(c, OP_ADD);
@@ -169,27 +168,40 @@ static void binary(LUA_CHUNK *c, LUA_PARSER *p) {
     }
 }
 
-static void eof(LUA_CHUNK *c, LUA_PARSER *p) {
+static void string(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
+    LUA_OBJ obj = { 0 };
+    LUA_STR *str = get_table_str(&vm->strings, p->prev.lexeme, p->prev.lexeme_len);
+    if (str == NULL) {
+        str = init_lua_str(p->prev.lexeme, p->prev.lexeme_len);
+        put_table(&vm->strings, str, NULL);
+    }
+    obj = init_lua_obj(STR, str);
+    write_const_chunk(c, &obj);
+    write_byte_chunk(c, OP_CONST);
+    write_byte_chunk(c, SIZE_DYN_ARR(c->values)-1);
+}
+
+static void eof(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
     write_byte_chunk(c, OP_RETURN);
 }
 
-static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_PREC prec) {
+static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_PREC prec) {
     advance_parser(p);
     prefix_fn prefix_rule = parse_rules[p->prev.type].prefix;
     if (prefix_rule == NULL) {
         report_parse_err(p, &p->prev, "Expected expression");
         return;
     }
-    prefix_rule(c, p);
+    prefix_rule(c, p, vm);
     while (prec <= parse_rules[p->curr.type].precedence) {
         advance_parser(p);
         infix_fn infix_rule = parse_rules[p->prev.type].infix;
-        infix_rule(c, p);
+        infix_rule(c, p, vm);
     }
 }
 
-static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p) {
-    parse_prec(c, p, PREC_ASSIGNMENT);
+static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
+    parse_prec(c, p, vm, PREC_ASSIGNMENT);
 }
 
 LUA_PARSER init_lua_parser(SRCBUF *buf) {
@@ -200,11 +212,11 @@ LUA_PARSER init_lua_parser(SRCBUF *buf) {
     return p;
 }
 
-LUA_BOOL compile(LUA_CHUNK *c, char *source, int length) {
+static LUA_BOOL compile(LUA_CHUNK *c, LUA_VM *vm, char *source, int length) {
     SRCBUF buf = init_src_buf(source, length);
     LUA_PARSER p = init_lua_parser(&buf);
     advance_parser(&p);
-    parse_expr(c, &p);
+    parse_expr(c, &p, vm);
     if (p.curr.type != TOKEN_EOF)
         report_parse_err(&p, &p.curr, "Unexpected token");
     return p.had_err == FALSE;
@@ -212,11 +224,14 @@ LUA_BOOL compile(LUA_CHUNK *c, char *source, int length) {
 
 void run(char *source, int length) {
     LUA_CHUNK chunk = init_chunk();
-    if (!compile(&chunk, source, length))
-        return;
-    write_byte_chunk(&chunk, OP_RETURN);
     LUA_VM vm = { 0 };
     init_vm(&vm);
+    if (!compile(&chunk, &vm, source, length)) {
+        destroy_chunk(&chunk);
+        destroy_vm(&vm);
+        return;
+    }
+    write_byte_chunk(&chunk, OP_RETURN);
     run_vm(&vm, &chunk);
     destroy_chunk(&chunk);
     destroy_vm(&vm);

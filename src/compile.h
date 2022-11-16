@@ -3,6 +3,7 @@
 
 #include "lexer.h"
 #include "chunk.h"
+#include "vm.h"
 
 #define MAX_ERR_BUF 100
 
@@ -30,8 +31,8 @@ typedef struct lua_parser {
 
 LUA_PARSER init_lua_parser(SRCBUF *buf);
 
-typedef void (*prefix_fn)(LUA_CHUNK *c, LUA_PARSER *p);
-typedef void (*infix_fn)(LUA_CHUNK *c, LUA_PARSER *p);
+typedef void (*prefix_fn)(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+typedef void (*infix_fn)(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
 
 typedef struct lua_parse_rule {
     prefix_fn prefix;

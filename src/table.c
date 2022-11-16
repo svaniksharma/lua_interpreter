@@ -1,5 +1,4 @@
 #include "debug.h"
-#include "structs.h"
 #include "table.h"
 #include "error.h"
 
@@ -90,8 +89,21 @@ void *get_table(TABLE *table, void *key) {
 }
 
 // TODO: implement for string interning
-char *get_table_str(TABLE *table, char *key) {
-    return NULL;
+LUA_STR *get_table_str(TABLE *table, char *key, int size) {
+    uint32_t key_hash = str_hash(key);
+    uint32_t index = key_hash % table->capacity;
+    while (TRUE) {
+        ENTRY *entry = &table->entries[index];
+        LUA_STR *str = (LUA_STR *) entry->key;
+        if (entry->key == NULL && entry->value == NULL) {
+            return NULL;
+        } else if (str->size == size && 
+                str->hash == key_hash && !strncmp(str->str, key, size)) {
+            return str;
+        }
+        index = (index + 1) % table->capacity;
+    }
+    return NULL; // unreachable
 }
 
 LUA_BOOL remove_table(TABLE *table, void *key) {
@@ -110,13 +122,12 @@ void destroy_table(TABLE *table) {
     SAFE_FREE(&entries);
 }
 
-uint32_t str_hash(void *key) {
-    char *str = (char *) key;
-    uint32_t hash = 2166136261u;
-    for (int i = 0; str[i] != '\0'; i++) {
-        hash ^= (uint8_t) str[i];
-        hash *= 16777619;
+void destroy_table_of_str(TABLE *table) {
+    for (int i = 0; i < table->capacity; i++) {
+        if (table->entries[i].key != NULL) {
+            LUA_STR *str = (LUA_STR *) table->entries[i].key;
+            destroy_lua_str(&str);
+        }
     }
-    return hash;
-} 
-
+    destroy_table(table);
+}

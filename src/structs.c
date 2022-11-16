@@ -1,6 +1,7 @@
 #include "structs.h"
 #include "error.h"
 #include "debug.h"
+#include "string.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,6 +29,8 @@ LUA_OBJ init_lua_obj_val(LUA_TYPE type, LUA_VAL v) {
     return o;
 }
 
+#ifdef LUA_DEBUG
+
 void print_lua_obj(LUA_OBJ *o) {
     switch (o->type) {
         case REAL:
@@ -39,10 +42,21 @@ void print_lua_obj(LUA_OBJ *o) {
         case NIL:
             LOG_DEBUG("nil");
             break;
+        case STR: {
+#define MAX_STR_PRINT 100
+            LUA_STR *str = (LUA_STR *) o->value.ptr;
+            char buf[MAX_STR_PRINT+1] = { 0 };
+            snprintf(buf, MAX_STR_PRINT+1, "%s", str->str);
+            LOG_DEBUG("%s", buf);
+#undef MAX_STR_PRINT
+            break;
+        }
         default:
             break;
     }
 }
+
+#endif
 
 static LUA_BOOL resize_dyn_arr(uint8_t **arr, int size_each, int old_capacity, int new_capacity) {
     TRY {

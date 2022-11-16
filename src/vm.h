@@ -2,6 +2,7 @@
 #define LUA_VM_H
 
 #include "chunk.h"
+#include "table.h"
 
 #define PERFORM_BINARY_OP_WITH_NUM(op, decl, type) \
 { \
@@ -40,6 +41,7 @@
 
 typedef struct lua_vm {
     uint8_t *ip; // points inside of the current chunk's code
+    TABLE strings;
     LUA_CHUNK *curr_chunk;
     LUA_OBJ stack[DEFAULT_STACK_SIZE];
     LUA_OBJ *top;

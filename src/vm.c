@@ -1,5 +1,6 @@
 #include "debug.h"
 #include "structs.h"
+#include "table.h"
 #include "vm.h"
 #include <math.h>
 
@@ -22,19 +23,26 @@ static LUA_OBJ peek_vm_stack(LUA_VM *vm) {
     return *(vm->top - 1);
 }
 
-static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b) {
+static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b, TABLE *str_table) {
     if (a->type != b->type)
         return FALSE;
     switch (a->type) {
         case BOOL: return a->value.b == b->value.b;
         case REAL: return a->value.n == b->value.n;
+        case STR:  {
+            LUA_STR *a_str = (LUA_STR *) a->value.ptr;
+            LUA_STR *b_str = (LUA_STR *) b->value.ptr;
+            return get_table_str(str_table, a_str->str, a_str->size) == get_table_str(str_table, b_str->str, b_str->size);
+        }
         default: return FALSE;
     }
+    return FALSE; // unreachable
 }
 
 void init_vm(LUA_VM *vm) {
     vm->curr_chunk = NULL;
     vm->ip = NULL;
+    init_table(&vm->strings, str_obj_hash);
     memset(vm->stack, 0, sizeof(vm->stack));
     vm->top = vm->stack;
 }
@@ -82,7 +90,7 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
             case OP_EQ: {
                 LUA_OBJ second_obj = pop_vm_stack(vm);
                 LUA_OBJ first_obj = pop_vm_stack(vm);
-                LUA_BOOL b = equal_objs(&first_obj, &second_obj);
+                LUA_BOOL b = equal_objs(&first_obj, &second_obj, &vm->strings);
                 push_vm_stack(vm, init_lua_obj(BOOL, &b));
                 break;
             }
@@ -128,4 +136,5 @@ void destroy_vm(LUA_VM *vm) {
     vm->ip = NULL;
     vm->top = NULL;
     vm->curr_chunk = NULL;
+    destroy_table_of_str(&vm->strings);
 }
