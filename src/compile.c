@@ -154,52 +154,8 @@ static void binary(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL can_assign)
     TOKEN_TYPE type = p->prev.type;
     LUA_PARSE_RULE rule = parse_rules[type];
     parse_prec(c, p, vm, (LUA_PREC) (rule.precedence + 1), TRUE);
-    switch (type) {
-        case TOKEN_ADD:
-            write_byte_chunk(c, OP_ADD);
-            break;
-        case TOKEN_MINUS:
-            write_byte_chunk(c, OP_SUB);
-            break;
-        case TOKEN_MULT:
-            write_byte_chunk(c, OP_MULT);
-            break;
-        case TOKEN_DIV:
-            write_byte_chunk(c, OP_DIV);
-            break;
-        case TOKEN_EXP:
-            write_byte_chunk(c, OP_EXP);
-            break;
-        case TOKEN_EQ:
-            write_byte_chunk(c, OP_EQ);
-            break;
-        case TOKEN_NE:
-            write_byte_chunk(c, OP_NE);
-            break;
-        case TOKEN_LE:
-            write_byte_chunk(c, OP_LE);
-            break;
-        case TOKEN_LT:
-            write_byte_chunk(c, OP_LT);
-            break;
-        case TOKEN_GE:
-            write_byte_chunk(c, OP_GE);
-            break;
-        case TOKEN_GT:
-            write_byte_chunk(c, OP_GT);
-            break;
-        case TOKEN_AND:
-            write_byte_chunk(c, OP_AND);
-            break;
-        case TOKEN_OR:
-            write_byte_chunk(c, OP_OR);
-            break;
-        case TOKEN_CAT:
-            write_byte_chunk(c, OP_CAT);
-            break;
-        default:
-            return;
-    }
+    if (type <= TOKEN_OR)
+        write_byte_chunk(c, (LUA_OPCODE) type);
 }
 
 static void string(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL can_assign) {

@@ -197,7 +197,6 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
                     return;
                 }
                 push_vm_stack(vm, *name_val);
-                // TODO remove name_str
                 break;
             }
             case OP_SET_GLOBAL: {

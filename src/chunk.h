@@ -15,6 +15,9 @@ typedef enum opcode {
     OP_GE,
     OP_LT,
     OP_LE,
+    OP_CAT,
+    OP_AND,
+    OP_OR,
     OP_TRUE,
     OP_FALSE,
     OP_DEF_GLOBAL,
@@ -24,10 +27,7 @@ typedef enum opcode {
     OP_CONST,
     OP_NEGATE,
     OP_NOT,
-    OP_AND,
-    OP_OR,
     OP_NIL,
-    OP_CAT,
     OP_RETURN,
 } LUA_OPCODE;
 
