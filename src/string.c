@@ -1,4 +1,5 @@
 #include "string.h"
+#include "debug.h"
 #include "structs.h"
 
 LUA_STR *init_lua_str(char *str, int size) {

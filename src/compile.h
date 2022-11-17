@@ -16,10 +16,13 @@ typedef enum lua_prec {
     PREC_CAT,
     PREC_TERM,
     PREC_FACTOR,
+    PREC_EXP,
     PREC_UNARY,
     PREC_CALL,
     PREC_PRIMARY,
 } LUA_PREC;
+
+#define CHECK_TYPE(p, t) (p->curr.type == t)
 
 typedef struct lua_parser {
     SRCBUF *buf;
@@ -31,15 +34,14 @@ typedef struct lua_parser {
 
 LUA_PARSER init_lua_parser(SRCBUF *buf);
 
-typedef void (*prefix_fn)(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
-typedef void (*infix_fn)(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+typedef void (*parse_rule_fn)(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL can_assign);
 
 typedef struct lua_parse_rule {
-    prefix_fn prefix;
-    infix_fn infix;
+    parse_rule_fn prefix;
+    parse_rule_fn infix;
     LUA_PREC precedence;
 } LUA_PARSE_RULE;
 
-void run(char *source, int length);
+void run(LUA_VM *vm, char *source, int length);
 
 #endif

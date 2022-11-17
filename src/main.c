@@ -8,13 +8,16 @@
 #define MAX_LINE_LEN 1000
 
 static void lua_repl() {
+    LUA_VM vm = { 0 };
+    init_vm(&vm);
     char line[MAX_LINE_LEN+1];
     printf("> ");
     while (fgets(line, MAX_LINE_LEN+1, stdin) != NULL) {
         if (strlen(line) > 0 && line[0] != '\n')
-            run(line, strlen(line)); // run the line
+            run(&vm, line, strlen(line)); // run the line
         printf("> ");
     }
+    destroy_vm(&vm);
 }
 
 static char *read_file(char *source, int *length) {
@@ -48,7 +51,10 @@ int main(int argc, char *argv[]) {
         if (source == NULL)
             return 1;
         LOG_DEBUG("Running %s", argv[1]);
-        run(source, length);  // run the line
+        LUA_VM vm = { 0 };
+        init_vm(&vm);
+        run(&vm, source, length);  // run the line
+        destroy_vm(&vm);
     }
     return 0;
 }

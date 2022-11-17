@@ -110,6 +110,7 @@ typedef enum lua_token_type {
     TOKEN_REPEAT,
     TOKEN_RETURN,
     TOKEN_ID,
+    TOKEN_LINE_BREAK,
     TOKEN_ERR,
     TOKEN_EOF
 } TOKEN_TYPE;

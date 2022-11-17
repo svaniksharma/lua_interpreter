@@ -12,7 +12,7 @@ typedef uint32_t (*hash_func)(void *key);
 
 typedef struct entry {
     void *key;
-    void *value;
+    LUA_OBJ value;
 } ENTRY;
 
 typedef struct table {
@@ -26,9 +26,9 @@ ERR init_table(TABLE *table, hash_func hash);
 int size_table(TABLE *table);
 LUA_BOOL put_table(TABLE *table, void *key, void *value);
 void *get_table(TABLE *table, void *key);
-LUA_STR *get_table_str(TABLE *table, char *key, int size);
+LUA_OBJ *get_table_str(TABLE *table, char *key, int size);
 LUA_BOOL remove_table(TABLE *table, void *key);
 void destroy_table(TABLE *table);
-void destroy_table_of_str(TABLE *table);
+void destroy_table_and_keys(TABLE *table);
 
 #endif

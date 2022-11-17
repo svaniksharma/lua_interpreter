@@ -42,6 +42,7 @@
 typedef struct lua_vm {
     uint8_t *ip; // points inside of the current chunk's code
     TABLE strings;
+    TABLE globals;
     LUA_CHUNK *curr_chunk;
     LUA_OBJ stack[DEFAULT_STACK_SIZE];
     LUA_OBJ *top;

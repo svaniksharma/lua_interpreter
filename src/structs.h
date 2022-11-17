@@ -9,8 +9,8 @@
 
 /* TYPES FOR LUA (and the interpreter itself) */
 
-typedef int    LUA_BOOL;
-typedef double LUA_REAL;
+typedef uint8_t LUA_BOOL;
+typedef double  LUA_REAL;
 
 typedef enum lua_type {
     BOOL,
@@ -32,14 +32,17 @@ typedef struct lua_obj {
 
 LUA_OBJ init_lua_obj(LUA_TYPE type, void *ptr);
 LUA_OBJ init_lua_obj_val(LUA_TYPE type, LUA_VAL v);
+void make_lua_obj_cpy(LUA_OBJ *src, LUA_OBJ *dst);
 
-#define IS_NUM(obj) (obj.type == REAL)
-#define IS_BOOL(obj) (obj.type == BOOL || obj.type == NIL)
-#define IS_STR(obj) (obj.type == STR)
+#define IS_NIL(obj) ((obj).type == NIL)
+#define IS_NUM(obj) ((obj).type == REAL)
+#define IS_BOOL(obj) ((obj).type == BOOL || (obj).type == NIL)
+#define IS_STR(obj) ((obj).type == STR)
 
-#define AS_NUM(obj) obj.value.n
-#define AS_BOOL(obj) obj.value.b
-#define AS_STR(obj) ((LUA_STR *) (obj.value.ptr))
+#define AS_NIL(obj) "nil"
+#define AS_NUM(obj) (obj).value.n
+#define AS_BOOL(obj) (obj).value.b
+#define AS_STR(obj) ((LUA_STR *) ((obj).value.ptr))
 
 #ifdef LUA_DEBUG
 

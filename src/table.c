@@ -10,7 +10,7 @@ static ENTRY *find_entry_loc(ENTRY *entries, int capacity, hash_func hash, void 
         if (entry->key == key) {
             return entry;
         } else if (entry->key == NULL) {
-            if (entry->value == NULL)
+            if (IS_NIL(entry->value))
                 return (tombstone != NULL) ? tombstone : entry;
             else if (tombstone == NULL)
                 tombstone = entry;
@@ -27,7 +27,7 @@ static ERR resize_table(TABLE *table) {
     CHECK(SAFE_ALLOC(&new_entries, new_capacity * sizeof(ENTRY)) != ALLOC_ERR);
     for (int i = 0; i < new_capacity; i++) {
         new_entries[i].key = NULL;
-        new_entries[i].value = NULL;
+        new_entries[i].value.type = NIL;
     }
     int new_size = 0;
     for (int i = 0; i < table->capacity; i++) {
@@ -53,6 +53,10 @@ ERR init_table(TABLE *table, hash_func hash) {
     table->capacity = INIT_TABLE_CAPACITY;
     table->hash = hash;
     CHECK(SAFE_ALLOC(&table->entries, table->capacity * sizeof(ENTRY)) != ALLOC_ERR);
+    for (int i = 0; i < table->capacity; i++) {
+        table->entries[i].key = NULL;
+        table->entries[i].value.type = NIL;
+    }
     return SUCCESS;
 lua_err:
     return FAIL;
@@ -71,11 +75,11 @@ LUA_BOOL put_table(TABLE *table, void *key, void *value) {
     if (key == NULL)
         return FALSE;
     ENTRY *entry = find_entry_loc(table->entries, table->capacity, table->hash, key);
-    LUA_BOOL new_key_inserted = entry->key == NULL && entry->value == NULL;
+    LUA_BOOL new_key_inserted = entry->key == NULL && IS_NIL(entry->value);
     if (new_key_inserted)
         ++table->size;
     entry->key = key;
-    entry->value = value;
+    make_lua_obj_cpy(value, &entry->value);
     return new_key_inserted;
 }
 
@@ -83,20 +87,20 @@ void *get_table(TABLE *table, void *key) {
     if (key == NULL)
         return NULL;
     ENTRY *entry = find_entry_loc(table->entries, table->capacity, table->hash, key);
-    return (entry->key == NULL) ? NULL : entry->value;
+    return (entry->key == NULL) ? NULL : &entry->value;
 }
 
-LUA_STR *get_table_str(TABLE *table, char *key, int size) {
+LUA_OBJ *get_table_str(TABLE *table, char *key, int size) {
     uint32_t key_hash = str_hash_len(key, size);
     uint32_t index = key_hash % table->capacity;
     while (TRUE) {
         ENTRY *entry = &table->entries[index];
         LUA_STR *str = (LUA_STR *) entry->key;
-        if (entry->key == NULL && entry->value == NULL) {
-            return NULL;
+        if (entry->key == NULL && IS_NIL(entry->value)) {
+            return &entry->value;
         } else if (str->size == size && 
                 str->hash == key_hash && !strncmp(str->str, key, size)) {
-            return str;
+            return &entry->value;
         }
         index = (index + 1) % table->capacity;
     }
@@ -112,14 +116,14 @@ LUA_BOOL remove_table(TABLE *table, void *key) {
 }
 
 void destroy_table(TABLE *table) {
+    SAFE_FREE(&table->entries);
     table->size = 0;
     table->capacity = 0;
     table->hash = NULL;
-    ENTRY *entries = table->entries;
-    SAFE_FREE(&entries);
+
 }
 
-void destroy_table_of_str(TABLE *table) {
+void destroy_table_and_keys(TABLE *table) {
     for (int i = 0; i < table->capacity; i++) {
         if (table->entries[i].key != NULL) {
             LUA_STR *str = (LUA_STR *) table->entries[i].key;
@@ -128,3 +132,4 @@ void destroy_table_of_str(TABLE *table) {
     }
     destroy_table(table);
 }
+

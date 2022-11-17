@@ -23,6 +23,10 @@ static LUA_OBJ peek_vm_stack(LUA_VM *vm) {
     return *(vm->top - 1);
 }
 
+static void reset_vm_stack(LUA_VM *vm) {
+    vm->top = vm->stack;
+}
+
 static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b, TABLE *str_table) {
     if (a->type != b->type)
         return FALSE;
@@ -40,12 +44,12 @@ static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b, TABLE *str_table) {
     return FALSE; // unreachable
 }
 
-static void str_cat(LUA_VM *vm) {
+static ERR str_cat(LUA_VM *vm) {
     LUA_OBJ second_obj = pop_vm_stack(vm);
     LUA_OBJ first_obj = pop_vm_stack(vm);
     if (!IS_STR(second_obj) || !IS_STR(first_obj)) {
         report_runtime_err("Expected string");
-        return;
+        return FAIL;
     }
     LUA_STR *b = AS_STR(second_obj);
     LUA_STR *a = AS_STR(first_obj);
@@ -55,27 +59,30 @@ static void str_cat(LUA_VM *vm) {
     strncpy(key, a->str, a->size);
     strncat(key, b->str, b->size);
     key[a->size + b->size] = '\0';
-    str = get_table_str(&vm->strings, key, a->size + b->size);
-    if (str == NULL) {
+    LUA_OBJ *str_obj = get_table_str(&vm->strings, key, a->size + b->size);
+    if (IS_NIL(*str_obj)) {
         CHECK(SAFE_ALLOC(&str, sizeof(LUA_STR)) != ALLOC_ERR);
         str->size = a->size + b->size;
         str->str = key;
         str->hash = str_hash(key);
         put_table(&vm->strings, str, NULL);
+    } else {
+        str = AS_STR(*str_obj);
     }
     LUA_OBJ obj = init_lua_obj(STR, str);
     push_vm_stack(vm, obj);
-    return;
+    return SUCCESS;
 lua_err:
     SAFE_FREE(&key);
     SAFE_FREE(&str);
-    return;
+    return FAIL;
 }
 
 void init_vm(LUA_VM *vm) {
     vm->curr_chunk = NULL;
     vm->ip = NULL;
     init_table(&vm->strings, str_obj_hash);
+    init_table(&vm->globals, str_obj_hash);
     memset(vm->stack, 0, sizeof(vm->stack));
     vm->top = vm->stack;
 }
@@ -86,6 +93,16 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
     while (TRUE) {
         LUA_OPCODE opcode = *vm->ip++;
         switch (opcode) {
+            case OP_POP: 
+#ifndef LUA_DEBUG
+                pop_vm_stack(vm); 
+#else
+                {
+                    LUA_OBJ obj = pop_vm_stack(vm);
+                    print_lua_obj(&obj);
+                }
+#endif
+                break;
             case OP_CONST: {
                 int index = *vm->ip++;
                 LUA_OBJ o = GET_DYN_ARR(chunk->values, index, LUA_OBJ);
@@ -136,6 +153,7 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
             case OP_NOT: {
                 if (!IS_BOOL(peek_vm_stack(vm))) {
                     report_runtime_err("Expected boolean");
+                    reset_vm_stack(vm);
                     return;
                 }
                 LUA_BOOL b = !AS_BOOL(pop_vm_stack(vm));
@@ -155,15 +173,44 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
                 push_vm_stack(vm, init_lua_obj(NIL, NULL));
                 break;
             case OP_CAT:
-                str_cat(vm);
+                if (str_cat(vm) != SUCCESS) {
+                    reset_vm_stack(vm);
+                    return;
+                }
                 break;
-            case OP_RETURN: {
-                LUA_OBJ o = pop_vm_stack(vm);
-#ifdef LUA_DEBUG
-                print_lua_obj(&o);
-#endif
-                return;
+            case OP_DEF_GLOBAL: {
+                int index = *vm->ip++;
+                LUA_OBJ name = GET_DYN_ARR(chunk->values, index, LUA_OBJ);
+                LUA_STR *name_str = AS_STR(name);
+                LUA_OBJ name_val = peek_vm_stack(vm);
+                put_table(&vm->globals, name_str, &name_val);
+                pop_vm_stack(vm);
+                break;
             }
+            case OP_GET_GLOBAL: {
+                int index = *vm->ip++;
+                LUA_OBJ name = GET_DYN_ARR(chunk->values, index, LUA_OBJ);
+                LUA_STR *name_str = AS_STR(name);
+                LUA_OBJ *name_val = get_table_str(&vm->globals, name_str->str, name_str->size);
+                if (IS_NIL(*name_val)) {
+                    report_runtime_err("Undefined variable");
+                    return;
+                }
+                push_vm_stack(vm, *name_val);
+                // TODO remove name_str
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                int index = *vm->ip++;
+                LUA_OBJ name = GET_DYN_ARR(chunk->values, index, LUA_OBJ);
+                LUA_STR *name_str = AS_STR(name);
+                LUA_OBJ name_val = peek_vm_stack(vm);
+                LUA_OBJ *orig_name_val = get_table_str(&vm->globals, name_str->str, name_str->size);
+                make_lua_obj_cpy(&name_val, orig_name_val);
+                break;
+            }
+            case OP_RETURN:
+                return;
         }
     }
 }
@@ -172,5 +219,6 @@ void destroy_vm(LUA_VM *vm) {
     vm->ip = NULL;
     vm->top = NULL;
     vm->curr_chunk = NULL;
-    destroy_table_of_str(&vm->strings);
+    destroy_table_and_keys(&vm->strings);
+    destroy_table_and_keys(&vm->globals);
 }

@@ -29,6 +29,31 @@ LUA_OBJ init_lua_obj_val(LUA_TYPE type, LUA_VAL v) {
     return o;
 }
 
+void make_lua_obj_cpy(LUA_OBJ *src, LUA_OBJ *dst) {
+    if (src == NULL) {
+        dst->type = NIL;
+        return;
+    }
+    dst->type = src->type;
+    switch (src->type) {
+        case REAL:
+            dst->value.b = 0;
+            dst->value.ptr = NULL;
+            dst->value.n = src->value.n;
+            break;
+        case BOOL:
+            dst->value.n = 0;
+            dst->value.ptr = NULL;
+            dst->value.b = src->value.b;
+            break;
+        default:
+            dst->value.n = 0;
+            dst->value.b = 0;
+            dst->value.ptr = src->value.ptr;
+            break;
+    }
+}
+
 #ifdef LUA_DEBUG
 
 void print_lua_obj(LUA_OBJ *o) {
