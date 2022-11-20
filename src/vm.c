@@ -50,6 +50,31 @@ static void print_vm_instr(LUA_VM *vm) {
     printf("\n");
 }
 
+static void print_vm_stack(LUA_VM *vm) {
+    LUA_OBJ *ptr = vm->stack;
+    printf("VM stack:\n");
+    while (ptr < vm->top) {
+        switch (ptr->type) {
+            case REAL:
+                printf("%g ", ptr->value.n);
+                break;
+            case BOOL:
+                printf("%s ", ptr->value.b ? "true" : "false");
+                break;
+            case STR: {
+                LUA_STR *str = (LUA_STR *) ptr->value.ptr;
+                printf("%s ", str->str);
+                break;
+            }
+            default:
+                printf("<LUA OBJECT: %p> ", ptr->value.ptr);
+                break;
+        }
+        ++ptr;
+    }
+    printf("\n");
+}
+
 #endif
 
 static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b, TABLE *str_table) {
@@ -118,6 +143,7 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
     while (TRUE) {
 #ifdef LUA_DEBUG
         print_vm_instr(vm);
+        print_vm_stack(vm);
 #endif
         LUA_OPCODE opcode = *vm->ip++;
         switch (opcode) {
