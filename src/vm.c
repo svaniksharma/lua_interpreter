@@ -27,6 +27,31 @@ static void reset_vm_stack(LUA_VM *vm) {
     vm->top = vm->stack;
 }
 
+#ifdef LUA_DEBUG
+
+static void print_vm_instr(LUA_VM *vm) {
+    uint8_t *ptr = vm->curr_chunk->code.arr;
+    uint8_t *end_arr = vm->curr_chunk->code.arr + SIZE_DYN_ARR(vm->curr_chunk->code);
+    printf("VM instructions:\n");
+    while (ptr < end_arr) {
+        printf("%s ", opcode_str_debug_table[*ptr]);
+        switch (*ptr) {
+            case OP_CONST:
+            case OP_GET_GLOBAL:
+            case OP_DEF_GLOBAL:
+            case OP_SET_GLOBAL:
+               printf("%d ", *(++ptr));
+               break;
+        }
+        if (ptr == vm->ip-1)
+            printf("| ");
+        ++ptr;
+    }
+    printf("\n");
+}
+
+#endif
+
 static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b, TABLE *str_table) {
     if (a->type != b->type)
         return FALSE;
@@ -91,6 +116,9 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
     vm->curr_chunk = chunk;
     vm->ip = chunk->code.arr;
     while (TRUE) {
+#ifdef LUA_DEBUG
+        print_vm_instr(vm);
+#endif
         LUA_OPCODE opcode = *vm->ip++;
         switch (opcode) {
             case OP_POP: 
