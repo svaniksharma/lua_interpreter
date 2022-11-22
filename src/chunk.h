@@ -2,6 +2,7 @@
 #define CHUNK_H
 
 #include "structs.h"
+#include "string.h"
 
 typedef enum opcode {
     OP_ADD,
@@ -23,6 +24,8 @@ typedef enum opcode {
     OP_DEF_GLOBAL,
     OP_GET_GLOBAL,
     OP_SET_GLOBAL,
+    OP_GET_LOCAL,
+    OP_SET_LOCAL,
     OP_POP,
     OP_CONST,
     OP_NEGATE,
@@ -53,6 +56,8 @@ static char *opcode_str_debug_table[] = {
     [OP_DEF_GLOBAL] = "OP_DEF_GLOBAL",
     [OP_GET_GLOBAL] = "OP_GET_GLOBAL",
     [OP_SET_GLOBAL] = "OP_SET_GLOBAL",
+    [OP_GET_LOCAL]  = "OP_GET_LOCAL",
+    [OP_SET_LOCAL]  = "OP_SET_LOCAL",
     [OP_POP]        = "OP_POP",
     [OP_CONST]      = "OP_CONST",
     [OP_NEGATE]     = "OP_NEGATE",
@@ -63,10 +68,16 @@ static char *opcode_str_debug_table[] = {
 
 #endif
 
-
 #define INITIAL_CAP 10
 
+typedef struct lua_local {
+    int depth;
+    LUA_STR *name;
+} LUA_LOCAL;
+
 typedef struct lua_chunk {
+    int scope;
+    DYN_ARR locals;
     DYN_ARR code;
     DYN_ARR values;
 } LUA_CHUNK;

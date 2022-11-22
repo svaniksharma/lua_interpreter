@@ -3,6 +3,7 @@
 
 #include "lexer.h"
 #include "chunk.h"
+#include "string.h"
 #include "vm.h"
 
 #define MAX_ERR_BUF 100

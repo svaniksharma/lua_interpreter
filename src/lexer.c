@@ -205,7 +205,7 @@ SRCBUF init_src_buf(char *src, int length) {
 TOKEN scan_next_token(SRCBUF *buf) {
     while (CAN_ADVANCE(buf)) {
         char c = CURR(buf);
-        if (c == ' ' || c == '\t' || c == '\r') {
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
             ADVANCE(buf);
         } else if (c == '-' && LOOKAHEAD(buf) == '-') {
             DOUBLE_ADVANCE(buf);
@@ -219,7 +219,6 @@ TOKEN scan_next_token(SRCBUF *buf) {
     }
     switch (CURR(buf)) {
         case '\0': SINGULAR_TOKEN(buf, TOKEN_EOF);
-        case '\n': SINGULAR_TOKEN(buf, TOKEN_LINE_BREAK);
         case '+': SINGULAR_TOKEN(buf, TOKEN_ADD);
         case '*': SINGULAR_TOKEN(buf, TOKEN_MULT);
         case '/': SINGULAR_TOKEN(buf, TOKEN_DIV);

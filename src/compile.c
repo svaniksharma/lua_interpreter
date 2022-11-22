@@ -1,6 +1,7 @@
 #include "debug.h"
 #include "lexer.h"
 #include "compile.h"
+#include "structs.h"
 #include "table.h"
 #include <stdio.h>
 
@@ -49,8 +50,9 @@ static void sync_err(LUA_PARSER *p) {
     }
 }
 
+static int check_local(LUA_CHUNK *c, LUA_STR *str);
 static void parse_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
-static void parse_var_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
+static void parse_var_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL is_local);
 static void parse_stmt(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_advance);
 static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_advance);
 static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_PREC prec, LUA_BOOL do_advance);
@@ -206,27 +208,68 @@ static LUA_BOOL match(LUA_PARSER *p, TOKEN_TYPE t) {
 static void parse_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
     if (match(p, TOKEN_ID)) {
         LUA_OBJ *name_val = get_table_str(&vm->globals, p->prev.lexeme, p->prev.lexeme_len);
-        if (CHECK_TYPE(p, TOKEN_ASSIGN) && IS_NIL(*name_val))
-            parse_var_decl(c, p, vm);
+        LUA_STR *name_val_str = init_lua_str(p->prev.lexeme, p->prev.lexeme_len);
+        int local_index = check_local(c, name_val_str);
+        destroy_lua_str(&name_val_str);
+        if (CHECK_TYPE(p, TOKEN_ASSIGN) && IS_NIL(*name_val) && local_index == -1) {
+            parse_var_decl(c, p, vm, FALSE);
+        }
         else
             parse_stmt(c, p, vm, FALSE);
+    } else if (match(p, TOKEN_LOCAL)) {
+        if (!match(p, TOKEN_ID) || !CHECK_TYPE(p, TOKEN_ASSIGN))
+            report_parse_err(p, &p->curr, "Expected local declaration");
+        else
+            parse_var_decl(c, p, vm, TRUE);
     } else
         parse_stmt(c, p, vm, TRUE);
     if (p->panic)
         sync_err(p);
 }
 
+static void add_local(LUA_CHUNK *c, LUA_STR *name) {
+    LUA_LOCAL local = { 0 };
+    local.depth = c->scope;
+    local.name = name;
+    ADD_DYN_ARR(&c->locals, &local);
+}
+
+static LUA_BOOL str_equal(LUA_STR *str1, LUA_STR *str2) {
+    return str1->size == str2->size && 
+        str1->hash == str2->hash && !strncmp(str1->str, str2->str, str1->size);
+}
+
+static int check_local(LUA_CHUNK *c, LUA_STR *str) {
+    for (int i = SIZE_DYN_ARR(c->locals)-1; i >= 0; i--) {
+        LUA_LOCAL *local = &GET_DYN_ARR(c->locals, i, LUA_LOCAL);
+        if (local->depth != -1 && local->depth < c->scope)
+            return -1;
+        if (str_equal(local->name, str))
+            return i;
+    }
+    return -1;
+}
+
 static void named_var(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, TOKEN *token, LUA_BOOL can_assign) {
     LUA_STR *str = init_lua_str(token->lexeme, token->lexeme_len);
     CHECK(str != NULL);
-    LUA_OBJ obj = init_lua_obj(STR, str);
-    write_const_chunk(c, &obj);
-    int index = SIZE_DYN_ARR(c->values) - 1;
+    uint8_t get_op = 0, set_op = 0;
+    int index = check_local(c, str);
+    if (index == -1) {
+        LUA_OBJ obj = init_lua_obj(STR, str);
+        write_const_chunk(c, &obj);
+        index = SIZE_DYN_ARR(c->values)-1;
+        get_op = OP_GET_GLOBAL;
+        set_op = OP_SET_GLOBAL;
+    } else {
+        get_op = OP_GET_LOCAL;
+        set_op = OP_SET_LOCAL;
+    }
     if (can_assign && match(p, TOKEN_ASSIGN)) {
         parse_expr(c, p, vm, TRUE);
-        write_byte_chunk(c, OP_SET_GLOBAL);
+        write_byte_chunk(c, set_op);
     } else
-        write_byte_chunk(c, OP_GET_GLOBAL);
+        write_byte_chunk(c, get_op);
     write_byte_chunk(c, index);
     return;
 lua_err:
@@ -237,13 +280,25 @@ static void var(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL can_assign) {
     named_var(c, p, vm, &p->prev, can_assign);
 }
 
-static int parse_var(LUA_CHUNK *c, LUA_PARSER *p, const char *err_msg) {
+static int parse_var(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL is_local) {
     LUA_STR *str = init_lua_str(p->prev.lexeme, p->prev.lexeme_len);
     CHECK(str != NULL);
-    LUA_OBJ obj = init_lua_obj(STR, str);
-    write_const_chunk(c, &obj);
+    int index = 0;
+    if (is_local) {
+        if (check_local(c, str) == -1)
+            add_local(c, str);
+        else {
+            report_parse_err(p, &p->prev, "Local variable already defined in scope");
+            return -1;
+        }
+        index = SIZE_DYN_ARR(c->locals)-1;
+    } else {
+        LUA_OBJ obj = init_lua_obj(STR, str);
+        write_const_chunk(c, &obj);
+        index = SIZE_DYN_ARR(c->values)-1;
+    }
     advance_parser(p);
-    return SIZE_DYN_ARR(c->values)-1;
+    return index;
 lua_err:
     return -1;
 }
@@ -253,21 +308,31 @@ static void define_var(LUA_CHUNK *c, int global_const_index) {
     write_byte_chunk(c, global_const_index);
 }
 
-static void parse_var_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
-    int global_const_index = parse_var(c, p, "Expected variable name");
+static void parse_var_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL is_local) {
+    int const_index = parse_var(c, p, vm, is_local);
     parse_expr(c, p, vm, TRUE);
-    consume_parser(p, TOKEN_LINE_BREAK, "Invalid variable declaration");
-    define_var(c, global_const_index);
+    if (!is_local)
+        define_var(c, const_index);
+}
+
+static void parse_block(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
+    while (!CHECK_TYPE(p, TOKEN_END) && !CHECK_TYPE(p, TOKEN_EOF))
+        parse_decl(c, p, vm);
+    consume_parser(p, TOKEN_END, "Expected end of block"); 
 }
 
 static void expr_stmt(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_advance) {
     parse_expr(c, p, vm, do_advance);
-    consume_parser(p, TOKEN_LINE_BREAK, "Expected end of expression");
     write_byte_chunk(c, OP_POP);
 }
 
 static void parse_stmt(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_advance) {
-    expr_stmt(c, p, vm, do_advance);
+    if (match(p, TOKEN_DO) || match(p, TOKEN_THEN)) {
+        ++c->scope;
+        parse_block(c, p, vm);
+        --c->scope;
+    } else
+        expr_stmt(c, p, vm, do_advance);
 }
 
 static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_advance) {

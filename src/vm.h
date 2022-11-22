@@ -36,7 +36,6 @@
     break; \
 }
 
-
 #define DEFAULT_STACK_SIZE 1024
 
 typedef struct lua_vm {
