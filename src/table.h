@@ -9,6 +9,7 @@
 #define INIT_TABLE_CAPACITY 10000
 
 typedef uint32_t (*hash_func)(void *key);
+typedef LUA_BOOL (*equals_func)(void *a, void *b);
 
 typedef struct entry {
     void *key;
@@ -19,10 +20,14 @@ typedef struct table {
     int size;
     int capacity;
     hash_func hash;
+    equals_func eq;
     ENTRY *entries;
 } TABLE;
 
-ERR init_table(TABLE *table, hash_func hash);
+LUA_BOOL equals_ptr(void *a, void *b);
+LUA_BOOL equals_str(void *a, void *b);
+
+ERR init_table(TABLE *table, hash_func hash, equals_func eq);
 int size_table(TABLE *table);
 LUA_BOOL put_table(TABLE *table, void *key, void *value);
 void *get_table(TABLE *table, void *key);

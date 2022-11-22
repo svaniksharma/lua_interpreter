@@ -133,8 +133,8 @@ lua_err:
 void init_vm(LUA_VM *vm) {
     vm->curr_chunk = NULL;
     vm->ip = NULL;
-    init_table(&vm->strings, str_obj_hash);
-    init_table(&vm->globals, str_obj_hash);
+    init_table(&vm->strings, str_obj_hash, equals_str);
+    init_table(&vm->globals, str_obj_hash, equals_str);
     memset(vm->stack, 0, sizeof(vm->stack));
     vm->top = vm->stack;
 }

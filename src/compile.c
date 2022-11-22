@@ -211,9 +211,8 @@ static void parse_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
         LUA_STR *name_val_str = init_lua_str(p->prev.lexeme, p->prev.lexeme_len);
         int local_index = check_local(c, name_val_str);
         destroy_lua_str(&name_val_str);
-        if (CHECK_TYPE(p, TOKEN_ASSIGN) && IS_NIL(*name_val) && local_index == -1) {
+        if (CHECK_TYPE(p, TOKEN_ASSIGN) && IS_NIL(*name_val) && local_index == -1)
             parse_var_decl(c, p, vm, FALSE);
-        }
         else
             parse_stmt(c, p, vm, FALSE);
     } else if (match(p, TOKEN_LOCAL)) {
