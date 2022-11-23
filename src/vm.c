@@ -108,6 +108,7 @@ static ERR str_cat(LUA_VM *vm) {
     CHECK(key != NULL);
     LUA_STR *interned_key = in_table(&vm->globals, key);
     if (interned_key == NULL) {
+        SENTINEL();
         put_table(&vm->strings, key, NULL);
         interned_key = key;
     }
@@ -122,7 +123,7 @@ lua_err:
 void init_vm(LUA_VM *vm) {
     vm->curr_chunk = NULL;
     vm->ip = NULL;
-    init_table(&vm->strings, str_obj_hash, equals_ptr);
+    init_table(&vm->strings, str_obj_hash, equals_str);
     init_table(&vm->globals, str_obj_hash, equals_str);
     memset(vm->stack, 0, sizeof(vm->stack));
     vm->top = vm->stack;

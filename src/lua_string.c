@@ -48,16 +48,6 @@ uint32_t str_hash_len(char *key, int size) {
     return hash;
 }
 
-uint32_t str_hash(void *key) {
-    char *str = (char *) key;
-    uint32_t hash = 2166136261u;
-    for (int i = 0; str[i] != '\0'; i++) {
-        hash ^= (uint8_t) str[i];
-        hash *= 16777619;
-    }
-    return hash;
-}
-
 void destroy_lua_str(LUA_STR **str) {
     LUA_STR *ptr = *str;
     if (ptr != NULL) {
