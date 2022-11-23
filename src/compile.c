@@ -250,7 +250,6 @@ static void named_var(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, TOKEN *token, LUA
         write_const_chunk(c, &obj);
         index = SIZE_DYN_ARR(c->values)-1;
         get_op = OP_GET_GLOBAL;
-        set_op = OP_SET_GLOBAL;
     } else {
         get_op = OP_GET_LOCAL;
         set_op = OP_SET_LOCAL;

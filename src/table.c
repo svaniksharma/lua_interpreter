@@ -127,7 +127,6 @@ void destroy_table(TABLE *table) {
     table->size = 0;
     table->capacity = 0;
     table->hash = NULL;
-
 }
 
 void destroy_table_and_keys(TABLE *table) {
