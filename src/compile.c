@@ -229,6 +229,16 @@ static void add_local(LUA_CHUNK *c, LUA_STR *name) {
     ADD_DYN_ARR(&c->locals, &local);
 }
 
+static void remove_locals(LUA_CHUNK *c) {
+    while (SIZE_DYN_ARR(c->locals) > 0) {
+        LUA_LOCAL local = GET_DYN_ARR(c->locals, SIZE_DYN_ARR(c->locals)-1, LUA_LOCAL);
+        if (local.depth >= c->scope) {
+            write_byte_chunk(c, OP_POP);
+            remove_end_dyn_arr(&c->locals);
+        }
+    }
+}
+
 static int check_local(LUA_CHUNK *c, LUA_STR *str) {
     for (int i = SIZE_DYN_ARR(c->locals)-1; i >= 0; i--) {
         LUA_LOCAL *local = &GET_DYN_ARR(c->locals, i, LUA_LOCAL);
@@ -319,6 +329,7 @@ static void parse_stmt(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_adva
     if (match(p, TOKEN_DO) || match(p, TOKEN_THEN)) {
         ++c->scope;
         parse_block(c, p, vm);
+        remove_locals(c);
         --c->scope;
     } else
         expr_stmt(c, p, vm, do_advance);

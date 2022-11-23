@@ -107,6 +107,11 @@ LUA_BOOL add_dyn_arr(DYN_ARR *d, uint8_t *item) {
     return TRUE;
 }
 
+void remove_end_dyn_arr(DYN_ARR *d) {
+    memset(d->arr + (d->n - 1) * d->size_each, 0, d->size_each);
+    --d->n;
+}
+
 void destroy_dyn_arr(DYN_ARR *d) {
     d->n = 0;
     d->size_each = 0;

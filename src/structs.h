@@ -62,6 +62,7 @@ typedef struct dyn_arr {
 
 ERR init_dyn_arr(DYN_ARR *d, int size_each);
 LUA_BOOL add_dyn_arr(DYN_ARR *d, uint8_t *item);
+void remove_end_dyn_arr(DYN_ARR *d);
 void destroy_dyn_arr(DYN_ARR *d);
 
 #define SIZE_DYN_ARR(d) d.n
