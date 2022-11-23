@@ -80,7 +80,7 @@ typedef struct lua_chunk {
     DYN_ARR values;
 } LUA_CHUNK;
 
-LUA_CHUNK init_chunk();
+ERR init_chunk(LUA_CHUNK *chunk);
 LUA_BOOL write_const_chunk(LUA_CHUNK *chunk, LUA_OBJ *o);
 LUA_BOOL write_byte_chunk(LUA_CHUNK *chunk, uint8_t byte);
 void destroy_chunk(LUA_CHUNK *chunk);

@@ -88,6 +88,7 @@ ERR init_dyn_arr(DYN_ARR *d, int size_each) {
     d->n = 0;
     d->size_each = size_each;
     d->capacity = INITIAL_CAP;
+    d->arr = NULL;
     CHECK(SAFE_ALLOC(&d->arr, d->size_each * d->capacity) != ALLOC_ERR);
     return SUCCESS;
 lua_err:

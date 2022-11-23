@@ -346,12 +346,15 @@ static LUA_BOOL compile(LUA_CHUNK *c, LUA_VM *vm, char *source, int length) {
 }
 
 void run(LUA_VM *vm, char *source, int length) {
-    LUA_CHUNK chunk = init_chunk();
+    LUA_CHUNK chunk = { 0 };
+    CHECK(init_chunk(&chunk) != FAIL);
     if (!compile(&chunk, vm, source, length)) {
         destroy_chunk(&chunk);
         return;
     }
-    write_byte_chunk(&chunk, OP_RETURN);
+    CHECK(write_byte_chunk(&chunk, OP_RETURN) != FALSE);
     run_vm(vm, &chunk);
     destroy_chunk(&chunk);
+lua_err:
+    return;
 }
