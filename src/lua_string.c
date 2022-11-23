@@ -1,6 +1,7 @@
-#include "lua_string.h"
 #include "debug.h"
 #include "structs.h"
+#include "lua_string.h"
+#include <string.h>
 
 LUA_STR *init_lua_str(char *str, int size) {
     LUA_STR *s = NULL;

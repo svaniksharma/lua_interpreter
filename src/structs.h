@@ -31,7 +31,6 @@ typedef struct lua_obj {
 } LUA_OBJ;
 
 LUA_OBJ init_lua_obj(LUA_TYPE type, void *ptr);
-LUA_OBJ init_lua_obj_val(LUA_TYPE type, LUA_VAL v);
 void make_lua_obj_cpy(LUA_OBJ *src, LUA_OBJ *dst);
 
 #define IS_NIL(obj) ((obj).type == NIL)

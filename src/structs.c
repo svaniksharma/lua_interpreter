@@ -1,7 +1,7 @@
 #include "structs.h"
-#include "error.h"
 #include "debug.h"
 #include "lua_string.h"
+#include <string.h>
 
 LUA_OBJ init_lua_obj(LUA_TYPE type, void *ptr) {
     LUA_OBJ o = { 0 };
@@ -17,13 +17,6 @@ LUA_OBJ init_lua_obj(LUA_TYPE type, void *ptr) {
             o.value.ptr = ptr;
             break;
     }
-    return o;
-}
-
-LUA_OBJ init_lua_obj_val(LUA_TYPE type, LUA_VAL v) {
-    LUA_OBJ o = { 0 };
-    o.type = type;
-    o.value = v;
     return o;
 }
 
@@ -81,7 +74,7 @@ void print_lua_obj(LUA_OBJ *o) {
 
 #endif
 
-static LUA_BOOL resize_dyn_arr(uint8_t **arr, int size_each, int old_capacity, int new_capacity) {
+static LUA_BOOL resize_dyn_arr(uint8_t **arr, int size_each, int new_capacity) {
     uint8_t *new_arr = realloc(*arr, size_each * new_capacity);
     CHECK(new_arr != NULL);
     if (new_arr != *arr)
@@ -95,13 +88,16 @@ ERR init_dyn_arr(DYN_ARR *d, int size_each) {
     d->n = 0;
     d->size_each = size_each;
     d->capacity = INITIAL_CAP;
-    return SAFE_ALLOC(&d->arr, d->size_each * d->capacity);
+    CHECK(SAFE_ALLOC(&d->arr, d->size_each * d->capacity) != ALLOC_ERR);
+    return SUCCESS;
+lua_err:
+    return FAIL;
 }
 
 LUA_BOOL add_dyn_arr(DYN_ARR *d, uint8_t *item) {
     if (d->n == d->capacity) {
         int new_capacity = d->capacity * 2;
-        if (!resize_dyn_arr(&d->arr, d->size_each, d->capacity, new_capacity))
+        if (!resize_dyn_arr(&d->arr, d->size_each, new_capacity))
             return FALSE;
         d->capacity = new_capacity;
     }
@@ -119,8 +115,9 @@ void destroy_dyn_arr(DYN_ARR *d) {
 
 ERR safe_alloc(void **ptr, int size) {
     if (size <= 0) {
-        *ptr = NULL;
-        return SUCCESS;
+        *ptr = NULL; 
+        REPORT_LUA_ERR("Bad size given: %d", size);
+        return ALLOC_ERR;
     }
     if (*ptr == NULL) {
         void *alloc = calloc(1, size);
@@ -128,7 +125,8 @@ ERR safe_alloc(void **ptr, int size) {
             return ALLOC_ERR;
         *ptr = alloc;
         return SUCCESS;
-    }
+    } else
+        REPORT_LUA_ERR("Pointer is already allocated: %p", *ptr);
     return ALLOC_ERR;
 }
 
