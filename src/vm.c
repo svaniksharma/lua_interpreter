@@ -78,7 +78,7 @@ static void print_vm_stack(LUA_VM *vm) {
 
 #endif
 
-static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b, TABLE *str_table) {
+static LUA_BOOL equal_objs(LUA_OBJ *a, LUA_OBJ *b) {
     if (a->type != b->type)
         return FALSE;
     switch (a->type) {
@@ -173,7 +173,7 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
             case OP_NE: {
                 LUA_OBJ second_obj = pop_vm_stack(vm);
                 LUA_OBJ first_obj = pop_vm_stack(vm);
-                LUA_BOOL b = equal_objs(&first_obj, &second_obj, &vm->strings);
+                LUA_BOOL b = equal_objs(&first_obj, &second_obj);
                 b = (opcode == OP_EQ) ? b : !b;
                 push_vm_stack(vm, init_lua_obj(BOOL, &b));
                 break;

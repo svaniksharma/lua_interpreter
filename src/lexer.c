@@ -70,6 +70,7 @@ static LUA_BOOL check_comment(SRCBUF *buf) {
         DOUBLE_ADVANCE(buf);
         int tokens_counted = 0;
         const int tokens_needed[] = { '-', '-', ']', ']' };
+        const int tokens_needed_size = sizeof(tokens_needed) / sizeof(int);
         while (CAN_ADVANCE(buf)) {
             char c = CURR(buf);
             ADVANCE(buf);
@@ -77,10 +78,10 @@ static LUA_BOOL check_comment(SRCBUF *buf) {
                 ++tokens_counted;
             else
                 tokens_counted = 0;
-            if (tokens_counted == sizeof(tokens_needed) / sizeof(int))
+            if (tokens_counted == tokens_needed_size)
                 break;
         }
-        return (tokens_counted < sizeof(tokens_needed) / sizeof(int)) ? FALSE : TRUE;
+        return (tokens_counted < tokens_needed_size) ? FALSE : TRUE;
     } else {
         while (CAN_ADVANCE(buf)) {
             if (CURR(buf) == '\n')

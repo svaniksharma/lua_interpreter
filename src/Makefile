@@ -1,5 +1,5 @@
-CFLAGS=-std=c99
-DEBUG_FLAGS=-g -Wall -DLUA_DEBUG
+CFLAGS=-std=c99 -Wall -Wpedantic -pedantic-errors -Wunused -Wextra
+DEBUG_FLAGS=-g -DLUA_DEBUG
 SRC=*.c
 LIB=-lm
 
