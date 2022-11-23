@@ -31,5 +31,6 @@ int main(int argc, char *argv[]) {
         SAFE_FREE(&ptr);
         ASSERT(ptr == NULL, "Expected ptr to be NULL");
     }
+    printf("Tests passed\n");
     return 0;
 }

@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <setjmp.h>
 
 typedef enum err {
     SUCCESS,

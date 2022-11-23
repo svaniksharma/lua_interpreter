@@ -4,6 +4,16 @@
 #include "chunk.h"
 #include "table.h"
 
+#define ADD(a, b) a + b
+#define SUB(a, b) a - b
+#define MULT(a, b) a * b
+#define DIV(a, b) a / b
+#define EXP(a, b) pow(a, b)
+#define LE(a, b) a <= b
+#define LT(a, b) a < b
+#define GE(a, b) a >= b
+#define GT(a, b) a > b
+
 #define PERFORM_BINARY_OP_WITH_NUM(op, decl, type) \
 { \
     LUA_OBJ second_obj = pop_vm_stack(vm); \
@@ -14,7 +24,7 @@
     } \
     LUA_REAL second = AS_NUM(second_obj); \
     LUA_REAL first = AS_NUM(first_obj); \
-    decl res = first op second; \
+    decl res = op(first, second); \
     LUA_OBJ obj = init_lua_obj(type, &res); \
     push_vm_stack(vm, obj); \
     break; \

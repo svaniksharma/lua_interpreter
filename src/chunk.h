@@ -2,7 +2,7 @@
 #define CHUNK_H
 
 #include "structs.h"
-#include "string.h"
+#include "lua_string.h"
 
 typedef enum opcode {
     OP_ADD,
@@ -21,7 +21,6 @@ typedef enum opcode {
     OP_OR,
     OP_TRUE,
     OP_FALSE,
-    OP_DEF_GLOBAL,
     OP_GET_GLOBAL,
     OP_SET_GLOBAL,
     OP_GET_LOCAL,
@@ -53,7 +52,6 @@ static char *opcode_str_debug_table[] = {
     [OP_OR]         = "OP_OR",
     [OP_TRUE]       = "OP_TRUE",
     [OP_FALSE]      = "OP_FALSE",
-    [OP_DEF_GLOBAL] = "OP_DEF_GLOBAL",
     [OP_GET_GLOBAL] = "OP_GET_GLOBAL",
     [OP_SET_GLOBAL] = "OP_SET_GLOBAL",
     [OP_GET_LOCAL]  = "OP_GET_LOCAL",

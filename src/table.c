@@ -1,6 +1,10 @@
 #include "debug.h"
 #include "table.h"
+#include "lua_string.h"
 #include "error.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 LUA_BOOL equals_ptr(void *a, void *b) {
     return a == b;
@@ -103,29 +107,19 @@ void *get_table(TABLE *table, void *key) {
     return (entry->key == NULL) ? NULL : &entry->value;
 }
 
-LUA_OBJ *get_table_str(TABLE *table, char *key, int size) {
-    uint32_t key_hash = str_hash_len(key, size);
-    uint32_t index = key_hash % table->capacity;
-    while (TRUE) {
-        ENTRY *entry = &table->entries[index];
-        LUA_STR *str = (LUA_STR *) entry->key;
-        if (entry->key == NULL && IS_NIL(entry->value)) {
-            return &entry->value;
-        } else if (str->size == size && 
-                str->hash == key_hash && !strncmp(str->str, key, size)) {
-            return &entry->value;
-        }
-        index = (index + 1) % table->capacity;
-    }
-    return NULL; // unreachable
-}
-
 LUA_BOOL remove_table(TABLE *table, void *key) {
     ENTRY *entry = find_entry_loc(table->entries, table->capacity, table->hash, table->eq, key);
     LUA_BOOL removed = entry->key != NULL;
     entry->key = NULL;
     // no need to decrease size, tombstones still take up space (though we reuse them)
     return removed;
+}
+
+void *in_table(TABLE *table, void *key) {
+    if (key == NULL)
+        return NULL;
+    ENTRY *entry = find_entry_loc(table->entries, table->capacity, table->hash, table->eq, key);
+    return entry->key;
 }
 
 void destroy_table(TABLE *table) {

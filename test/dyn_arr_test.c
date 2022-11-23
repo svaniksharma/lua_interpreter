@@ -22,5 +22,6 @@ int main(int argc, char *argv[]) {
     }
     destroy_dyn_arr(&d);
     ASSERT(d.arr == NULL, "Dynamic array not freed");
+    printf("Tests passed\n");
     return 0;
 }

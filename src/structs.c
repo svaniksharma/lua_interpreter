@@ -1,9 +1,7 @@
 #include "structs.h"
 #include "error.h"
 #include "debug.h"
-#include "string.h"
-#include <stdlib.h>
-#include <string.h>
+#include "lua_string.h"
 
 LUA_OBJ init_lua_obj(LUA_TYPE type, void *ptr) {
     LUA_OBJ o = { 0 };

@@ -156,20 +156,15 @@ static void binary(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL can_assign)
     TOKEN_TYPE type = p->prev.type;
     LUA_PARSE_RULE rule = parse_rules[type];
     parse_prec(c, p, vm, (LUA_PREC) (rule.precedence + 1), TRUE);
-    if (type <= TOKEN_OR)
-        write_byte_chunk(c, (LUA_OPCODE) type);
+    write_byte_chunk(c, (LUA_OPCODE) type);
 }
 
 static void string(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL can_assign) {
     LUA_OBJ obj = { 0 };
-    LUA_OBJ *str_obj = get_table_str(&vm->strings, p->prev.lexeme, p->prev.lexeme_len);
-    LUA_STR *str = NULL;
-    if (IS_NIL(*str_obj)) {
-        str = init_lua_str(p->prev.lexeme, p->prev.lexeme_len);
+    LUA_STR *str = init_lua_str(p->prev.lexeme, p->prev.lexeme_len);
+    LUA_OBJ *str_obj = get_table(&vm->strings, str);
+    if (str_obj != NULL)
         put_table(&vm->strings, str, NULL);
-    } else {
-        str = AS_STR(*str_obj);
-    }
     obj = init_lua_obj(STR, str);
     write_const_chunk(c, &obj);
     write_byte_chunk(c, OP_CONST);
@@ -207,11 +202,10 @@ static LUA_BOOL match(LUA_PARSER *p, TOKEN_TYPE t) {
 
 static void parse_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
     if (match(p, TOKEN_ID)) {
-        LUA_OBJ *name_val = get_table_str(&vm->globals, p->prev.lexeme, p->prev.lexeme_len);
         LUA_STR *name_val_str = init_lua_str(p->prev.lexeme, p->prev.lexeme_len);
         int local_index = check_local(c, name_val_str);
         destroy_lua_str(&name_val_str);
-        if (CHECK_TYPE(p, TOKEN_ASSIGN) && IS_NIL(*name_val) && local_index == -1)
+        if (CHECK_TYPE(p, TOKEN_ASSIGN) && local_index == -1)
             parse_var_decl(c, p, vm, FALSE);
         else
             parse_stmt(c, p, vm, FALSE);
@@ -233,17 +227,12 @@ static void add_local(LUA_CHUNK *c, LUA_STR *name) {
     ADD_DYN_ARR(&c->locals, &local);
 }
 
-static LUA_BOOL str_equal(LUA_STR *str1, LUA_STR *str2) {
-    return str1->size == str2->size && 
-        str1->hash == str2->hash && !strncmp(str1->str, str2->str, str1->size);
-}
-
 static int check_local(LUA_CHUNK *c, LUA_STR *str) {
     for (int i = SIZE_DYN_ARR(c->locals)-1; i >= 0; i--) {
         LUA_LOCAL *local = &GET_DYN_ARR(c->locals, i, LUA_LOCAL);
         if (local->depth != -1 && local->depth < c->scope)
             return -1;
-        if (str_equal(local->name, str))
+        if (equals_str(local->name, str))
             return i;
     }
     return -1;
@@ -303,7 +292,7 @@ lua_err:
 }
 
 static void define_var(LUA_CHUNK *c, int global_const_index) {
-    write_byte_chunk(c, OP_DEF_GLOBAL);
+    write_byte_chunk(c, OP_SET_GLOBAL);
     write_byte_chunk(c, global_const_index);
 }
 
@@ -321,6 +310,7 @@ static void parse_block(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
 }
 
 static void expr_stmt(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_advance) {
+    SENTINEL();
     parse_expr(c, p, vm, do_advance);
     write_byte_chunk(c, OP_POP);
 }
