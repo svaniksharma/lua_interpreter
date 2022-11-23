@@ -106,9 +106,8 @@ static ERR str_cat(LUA_VM *vm) {
     LUA_STR *a = AS_STR(first_obj);
     LUA_STR *key = cat_lua_str(a, b);
     CHECK(key != NULL);
-    LUA_STR *interned_key = in_table(&vm->globals, key);
+    LUA_STR *interned_key = in_table(&vm->strings, key);
     if (interned_key == NULL) {
-        SENTINEL();
         put_table(&vm->strings, key, NULL);
         interned_key = key;
     }

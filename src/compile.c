@@ -162,10 +162,12 @@ static void binary(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL can_assign)
 static void string(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL can_assign) {
     LUA_OBJ obj = { 0 };
     LUA_STR *str = init_lua_str(p->prev.lexeme, p->prev.lexeme_len);
-    LUA_OBJ *str_obj = get_table(&vm->strings, str);
-    if (str_obj != NULL)
+    LUA_STR *interned_str = in_table(&vm->strings, str);
+    if (interned_str == NULL) {
         put_table(&vm->strings, str, NULL);
-    obj = init_lua_obj(STR, str);
+        interned_str = str;
+    }
+    obj = init_lua_obj(STR, interned_str);
     write_const_chunk(c, &obj);
     write_byte_chunk(c, OP_CONST);
     write_byte_chunk(c, SIZE_DYN_ARR(c->values)-1);
@@ -310,7 +312,6 @@ static void parse_block(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
 }
 
 static void expr_stmt(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_advance) {
-    SENTINEL();
     parse_expr(c, p, vm, do_advance);
     write_byte_chunk(c, OP_POP);
 }
