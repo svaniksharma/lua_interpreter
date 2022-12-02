@@ -37,8 +37,6 @@ static void print_vm_instr(LUA_VM *vm) {
         printf("%s ", opcode_str_debug_table[*ptr]);
         switch (*ptr) {
             case OP_CONST:
-            case OP_GET_LOCAL:
-            case OP_SET_LOCAL:
             case OP_GET_GLOBAL:
             case OP_SET_GLOBAL:
                printf("%d ", *(++ptr));
@@ -229,16 +227,6 @@ void run_vm(LUA_VM *vm, LUA_CHUNK *chunk) {
                 LUA_OBJ name_val = peek_vm_stack(vm);
                 put_table(&vm->globals, name_str, &name_val);
                 pop_vm_stack(vm);
-                break;
-            }
-            case OP_GET_LOCAL: {
-                int index = *vm->ip++;
-                push_vm_stack(vm, vm->stack[index]);
-                break;
-            }
-            case OP_SET_LOCAL: {
-                int index = *vm->ip++;
-                vm->stack[index] = peek_vm_stack(vm);
                 break;
             }
             case OP_RETURN:
