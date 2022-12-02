@@ -5,7 +5,6 @@
 
 ERR init_chunk(LUA_CHUNK *chunk) {
     chunk->scope = 0;
-    CHECK(init_dyn_arr(&chunk->locals, sizeof(LUA_LOCAL)) != FAIL);
     CHECK(init_dyn_arr(&chunk->code, sizeof(uint8_t)) != FAIL);
     CHECK(init_dyn_arr(&chunk->values, sizeof(LUA_OBJ)) != FAIL);
     return SUCCESS;
@@ -24,7 +23,6 @@ LUA_BOOL write_byte_chunk(LUA_CHUNK *chunk, uint8_t byte) {
 
 void destroy_chunk(LUA_CHUNK *chunk) {
     chunk->scope = 0;
-    destroy_dyn_arr(&chunk->locals);
     destroy_dyn_arr(&chunk->code);
     destroy_dyn_arr(&chunk->values);
 }

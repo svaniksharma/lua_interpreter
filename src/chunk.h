@@ -64,14 +64,8 @@ static char *opcode_str_debug_table[] = {
 
 #define INITIAL_CAP 10
 
-typedef struct lua_local {
-    int depth;
-    LUA_STR *name;
-} LUA_LOCAL;
-
 typedef struct lua_chunk {
     int scope;
-    DYN_ARR locals;
     DYN_ARR code;
     DYN_ARR values;
 } LUA_CHUNK;

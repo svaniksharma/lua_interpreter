@@ -51,7 +51,7 @@ static void sync_err(LUA_PARSER *p) {
 }
 
 static void parse_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
-static void parse_var_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL is_local);
+static void parse_var_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm);
 static void parse_stmt(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_advance);
 static void parse_expr(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL do_advance);
 static void parse_prec(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_PREC prec, LUA_BOOL do_advance);
@@ -204,7 +204,7 @@ static LUA_BOOL match(LUA_PARSER *p, TOKEN_TYPE t) {
 static void parse_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
     if (match(p, TOKEN_ID)) {
         if (CHECK_TYPE(p, TOKEN_ASSIGN))
-            parse_var_decl(c, p, vm, FALSE);
+            parse_var_decl(c, p, vm);
         else
             parse_stmt(c, p, vm, FALSE);
     } else
@@ -234,7 +234,7 @@ static void var(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL can_assign) {
     named_var(c, p, vm, &p->prev, can_assign);
 }
 
-static int parse_var(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL is_local) {
+static int parse_var(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
     LUA_STR *str = init_lua_str(p->prev.lexeme, p->prev.lexeme_len);
     CHECK(str != NULL);
     int index = 0;
@@ -252,11 +252,10 @@ static void define_var(LUA_CHUNK *c, int global_const_index) {
     write_byte_chunk(c, global_const_index);
 }
 
-static void parse_var_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm, LUA_BOOL is_local) {
-    int const_index = parse_var(c, p, vm, is_local);
+static void parse_var_decl(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
+    int const_index = parse_var(c, p, vm);
     parse_expr(c, p, vm, TRUE);
-    if (!is_local)
-        define_var(c, const_index);
+    define_var(c, const_index);
 }
 
 static void parse_block(LUA_CHUNK *c, LUA_PARSER *p, LUA_VM *vm) {
